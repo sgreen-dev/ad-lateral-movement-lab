@@ -1,0 +1,49 @@
+title: Suspicious PowerShell Following WinRM Session
+id: 00000000-0000-0000-0000-000000000004     # TODO Phase 4
+status: experimental
+description: |
+  Detects PowerShell execution with suspicious patterns (encoded command,
+  download cradles, AMSI bypass strings) on a host where a WinRM session
+  was recently established. Pairs with the WinRM rule for kill-chain
+  reconstruction.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://github.com/SigmaHQ/sigma/tree/master/rules/windows/powershell
+author: '[Your Name]'
+date: 2026-04-28
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.defense_evasion
+  - attack.t1027.010
+logsource:
+  product: windows
+  category: ps_script
+detection:
+  encoded_command:
+    ScriptBlockText|contains:
+      - 'FromBase64String'
+      - '-EncodedCommand'
+      - '-enc '
+      - '-e '
+  download_cradle:
+    ScriptBlockText|contains:
+      - 'IEX (New-Object Net.WebClient).DownloadString'
+      - 'Invoke-WebRequest'
+      - 'IWR '
+      - 'DownloadFile'
+  amsi_bypass:
+    ScriptBlockText|contains:
+      - 'amsiInitFailed'
+      - 'AmsiScanBuffer'
+      - '[Ref].Assembly.GetType'
+  condition: 1 of (encoded_command, download_cradle, amsi_bypass)
+falsepositives:
+  - Legitimate admin scripts using base64-encoded payloads
+  - Software installers using IEX
+level: high
+
+# === STUB ===
+# TODO Phase 4:
+#   - assign real UUID
+#   - cross-reference SigmaHQ existing rules (don't reinvent — fork)

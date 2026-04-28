@@ -1,0 +1,39 @@
+title: RDP Logon From Unusual Source
+id: 00000000-0000-0000-0000-000000000001     # TODO Phase 4: replace with real UUID4
+status: experimental
+description: |
+  Detects an interactive RDP logon (Windows Security Event 4624 with LogonType=10)
+  from a source IP not on the maintained allow-list of jump hosts and admin
+  workstations. Tuned for use after Atomic Red Team test T1021.001-1.
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+  - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.001/T1021.001.md
+author: '[Your Name]'
+date: 2026-04-28
+modified: 2026-04-28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4624
+    LogonType: 10
+  filter_known_admin_sources:
+    IpAddress:
+      # TODO Phase 4: populate with allow-list from docs/known-admin-hosts.md
+      - '10.0.99.99'  # placeholder
+  condition: selection and not filter_known_admin_sources
+falsepositives:
+  - Legitimate administrative RDP from sources not yet on the allow-list
+  - RDP gateway / brokered sessions (review WorkstationName field)
+level: medium
+
+# === STUB ===
+# TODO Phase 4:
+#   - assign real UUID
+#   - finalize allow-list filter pattern
+#   - validate against test_data/sample_4624_type10.json
+#   - translate to SPL (detections/splunk/) and KQL (detections/kql/)

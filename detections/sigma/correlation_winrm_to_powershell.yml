@@ -1,0 +1,35 @@
+title: WinRM Authentication to PowerShell Execution Chain
+id: 00000000-0000-0000-0000-000000000005     # TODO Phase 4
+status: experimental
+description: |
+  Correlation rule. Fires when a 4624 LogonType=3 to a host is followed
+  within 5 minutes by suspicious PowerShell on the same host by the same
+  user. This is the "tell the story end-to-end" rule that ties the lateral
+  movement and the execution together for analyst triage.
+references:
+  - https://attack.mitre.org/tactics/TA0008/
+  - https://github.com/SigmaHQ/sigma-specification/blob/main/specification/sigma-correlations-specification.md
+author: '[Your Name]'
+date: 2026-04-28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.006
+  - attack.t1059.001
+correlation:
+  type: temporal
+  rules:
+    - winrm_logon       # local id of T1021.006 rule
+    - suspicious_ps     # local id of T1059.001 rule
+  group-by:
+    - ComputerName
+    - User
+  timespan: 5m
+  condition:
+    eq: 2
+
+# === STUB ===
+# TODO Phase 4:
+#   - assign real UUID
+#   - this uses Sigma's correlation spec — confirm Wazuh backend supports it
+#     (if not, implement as native Wazuh rule and document the divergence)
+#   - the Wazuh-native version goes in detections/wazuh/ (folder created Phase 4)

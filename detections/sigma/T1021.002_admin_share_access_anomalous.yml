@@ -1,0 +1,39 @@
+title: Anomalous Admin Share Access
+id: 00000000-0000-0000-0000-000000000002     # TODO Phase 4
+status: experimental
+description: |
+  Detects access to administrative shares (C$, ADMIN$, IPC$) from a host that
+  is not an approved backup or management server. Correlates Windows
+  Security Event 5145 with Sysmon Event ID 3 (network connection on TCP/445).
+references:
+  - https://attack.mitre.org/techniques/T1021/002/
+  - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.002/T1021.002.md
+author: '[Your Name]'
+date: 2026-04-28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 5145
+    ShareName|endswith:
+      - '\C$'
+      - '\ADMIN$'
+  filter_known_management_hosts:
+    IpAddress:
+      - '10.0.2.10'  # placeholder — DC for legitimate replication
+  condition: selection and not filter_known_management_hosts
+falsepositives:
+  - Domain controller replication
+  - Backup/management software (document and allow-list)
+  - Software deployment tools (SCCM, etc.)
+level: medium
+
+# === STUB ===
+# TODO Phase 4:
+#   - assign real UUID
+#   - extend with Sysmon EID 3 correlation (separate rule, then aggregator)
+#   - validate against test fixtures

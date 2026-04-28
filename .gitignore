@@ -1,0 +1,65 @@
+# --- Terraform ---
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!example.tfvars
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# --- AWS / secrets ---
+*.pem
+*.ppk
+.aws/
+credentials
+*credentials*.json
+*.env
+.env.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Windows / Sysmon artifacts ---
+*.evtx
+*.dmp
+NTUSER.DAT*
+
+# --- Editors ---
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Lab outputs that shouldn't be committed ---
+captures/
+raw-logs/
+local-notes.md
+scratch/
+
+# --- Allow ---
+!detections/test_data/*.json
+!screenshots/*.png

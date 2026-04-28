@@ -1,0 +1,111 @@
+name: Sigma rules — lint and convert
+
+on:
+  push:
+    paths:
+      - 'detections/sigma/**'
+      - '.github/workflows/sigma-lint.yml'
+  pull_request:
+    paths:
+      - 'detections/sigma/**'
+      - '.github/workflows/sigma-lint.yml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint Sigma rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install sigma tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install pysigma pysigma-backend-splunk pysigma-pipeline-sysmon pysigma-backend-kusto pyyaml
+
+      - name: YAML syntax check
+        run: |
+          python - <<'PY'
+          import sys, yaml, pathlib
+          rc = 0
+          for p in pathlib.Path("detections/sigma").rglob("*.yml"):
+              try:
+                  yaml.safe_load(p.read_text())
+                  print(f"[ok]  {p}")
+              except yaml.YAMLError as e:
+                  print(f"[err] {p}: {e}")
+                  rc = 1
+          sys.exit(rc)
+          PY
+
+      - name: Sigma rule structural lint
+        run: |
+          python - <<'PY'
+          import sys, yaml, pathlib, uuid
+          required = {"title", "id", "status", "description", "logsource", "detection", "level"}
+          rc = 0
+          for p in pathlib.Path("detections/sigma").rglob("*.yml"):
+              doc = yaml.safe_load(p.read_text())
+              if doc is None:
+                  print(f"[err] {p}: empty document")
+                  rc = 1
+                  continue
+              missing = required - set(doc.keys())
+              if missing:
+                  print(f"[err] {p}: missing keys {missing}")
+                  rc = 1
+              # Warn (not fail) on placeholder UUIDs while in scaffold phase
+              try:
+                  u = uuid.UUID(str(doc.get("id", "")))
+                  if str(u) == "00000000-0000-0000-0000-000000000001"[:8] + "-0000-0000-0000-000000000001"[8:]:
+                      pass
+                  if str(u).startswith("00000000-"):
+                      print(f"[warn] {p}: placeholder UUID — replace before claiming production-ready")
+              except ValueError:
+                  print(f"[err] {p}: id is not a valid UUID")
+                  rc = 1
+              else:
+                  print(f"[ok]  {p}")
+          sys.exit(rc)
+          PY
+
+  convert:
+    name: Convert Sigma -> SPL & KQL
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install sigma tooling
+        run: |
+          pip install pysigma pysigma-backend-splunk pysigma-pipeline-sysmon pysigma-backend-kusto sigma-cli
+
+      - name: Convert to SPL (smoke check)
+        continue-on-error: true   # placeholder rules may not convert cleanly; flip to false in Phase 4
+        run: |
+          for f in detections/sigma/*.yml; do
+            echo "=== $f -> SPL ==="
+            sigma convert -t splunk -p sysmon "$f" || echo "(conversion failed — expected for stubs)"
+          done
+
+      - name: Convert to KQL (smoke check)
+        continue-on-error: true
+        run: |
+          for f in detections/sigma/*.yml; do
+            echo "=== $f -> KQL ==="
+            sigma convert -t microsoft365defender "$f" || echo "(conversion failed — expected for stubs)"
+          done

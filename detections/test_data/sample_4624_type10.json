@@ -1,0 +1,8 @@
+{
+  "_comment": "Sample Windows Security Event 4624 with LogonType=10 (RDP). Populated in Phase 4 with a real captured event from the lab. Used by CI to validate the T1021.001 Sigma rule.",
+  "EventID": 4624,
+  "LogonType": 10,
+  "TargetUserName": "PLACEHOLDER",
+  "IpAddress": "PLACEHOLDER",
+  "WorkstationName": "PLACEHOLDER"
+}

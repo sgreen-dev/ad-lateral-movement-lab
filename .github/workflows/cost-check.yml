@@ -1,0 +1,80 @@
+name: Cost runaway check
+
+# Independent observer. Lists running EC2 instances tagged for this lab.
+# Opens a GitHub issue if anything is up. Layer 3 of the cost-controls model.
+
+on:
+  schedule:
+    - cron: '0 13 * * *'   # 13:00 UTC = 09:00 ET — fires after the 03:00 UTC auto-stop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write   # for OIDC if you wire it up
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # TODO Phase 1: switch to OIDC (preferred) once the IAM role is provisioned.
+          # For now, the workflow uses repo secrets:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: List running lab instances
+        id: check
+        run: |
+          set -eo pipefail
+          RUNNING=$(aws ec2 describe-instances \
+            --filters "Name=tag:Project,Values=ad-lateral-movement-lab" \
+                      "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0],LaunchTime]' \
+            --output text)
+
+          if [ -z "$RUNNING" ]; then
+            echo "✅ No lab instances running."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "⚠️  Lab instances still running:"
+            echo "$RUNNING"
+            {
+              echo "found=true"
+              echo "details<<EOF"
+              echo "$RUNNING"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue if anything is running
+        if: steps.check.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const details = `${{ steps.check.outputs.details }}`;
+            const body = [
+              "🚨 **Lab instances still running outside expected window.**",
+              "",
+              "```",
+              details,
+              "```",
+              "",
+              "Action: run `terraform destroy` from `terraform/`, or stop manually:",
+              "",
+              "```bash",
+              "aws ec2 stop-instances --instance-ids <ids>",
+              "```",
+              "",
+              `_Detected by .github/workflows/cost-check.yml at ${new Date().toISOString()}._`
+            ].join("\n");
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Cost runaway: lab instances still running",
+              body,
+              labels: ["cost", "automated"]
+            });

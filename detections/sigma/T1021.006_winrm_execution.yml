@@ -1,0 +1,35 @@
+title: WinRM Remote Execution
+id: 00000000-0000-0000-0000-000000000003     # TODO Phase 4
+status: experimental
+description: |
+  Detects WinRM-based remote execution by joining a network logon (4624
+  LogonType=3) with a subsequent process creation under wsmprovhost.exe
+  (the WinRM provider host) on the destination. This is high-fidelity for
+  T1021.006 and rarely triggers outside genuine remoting.
+references:
+  - https://attack.mitre.org/techniques/T1021/006/
+  - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.006/T1021.006.md
+author: '[Your Name]'
+date: 2026-04-28
+tags:
+  - attack.lateral_movement
+  - attack.t1021.006
+  - attack.execution
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    ParentImage|endswith: '\wsmprovhost.exe'
+  condition: selection
+falsepositives:
+  - Authorized administrators using PowerShell remoting
+  - Configuration management tools (Ansible, DSC) — allow-list these source hosts
+level: high
+
+# === STUB ===
+# TODO Phase 4:
+#   - assign real UUID
+#   - validate ParentImage field name (Sysmon EID 1) vs Security 4688
+#   - decide whether to author two variants (one Sysmon, one 4688)
+#   - this is the rule the IR report walks through end-to-end in Phase 5
