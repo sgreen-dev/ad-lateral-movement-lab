@@ -123,10 +123,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bootstrap" {
 # Upload each bootstrap script. Hashes trigger re-upload on change.
 locals {
   bootstrap_scripts = {
-    "10-common.ps1"       = "${path.module}/bootstrap/10-common.ps1"
-    "20-promote-dc.ps1"   = "${path.module}/bootstrap/20-promote-dc.ps1"
-    "30-domain-join.ps1"  = "${path.module}/bootstrap/30-domain-join.ps1"
-    "40-install-art.ps1"  = "${path.module}/bootstrap/40-install-art.ps1"
+    "10-common.ps1"      = "${path.module}/bootstrap/10-common.ps1"
+    "20-promote-dc.ps1"  = "${path.module}/bootstrap/20-promote-dc.ps1"
+    "30-domain-join.ps1" = "${path.module}/bootstrap/30-domain-join.ps1"
+    "40-install-art.ps1" = "${path.module}/bootstrap/40-install-art.ps1"
   }
 }
 
@@ -321,31 +321,31 @@ resource "aws_security_group" "member" {
 locals {
   # Common bootstrap context passed to the scripts as PowerShell variables
   user_data_dc = templatefile("${path.module}/bootstrap/00-userdata-stub.ps1.tftpl", {
-    bucket_name        = aws_s3_bucket.bootstrap.id
-    role               = "dc"
-    domain_name        = var.domain_name
-    domain_netbios     = var.domain_netbios_name
-    domain_admin_pw    = random_password.domain_admin.result
-    dsrm_pw            = random_password.dsrm.result
-    alice_pw           = random_password.alice.result
-    bob_pw             = random_password.bob.result
-    svc_backup_pw      = random_password.svc_backup.result
-    wazuh_manager_ip   = var.wazuh_manager_ip
-    dc_private_ip      = "" # DC doesn't need to look up itself
+    bucket_name      = aws_s3_bucket.bootstrap.id
+    role             = "dc"
+    domain_name      = var.domain_name
+    domain_netbios   = var.domain_netbios_name
+    domain_admin_pw  = random_password.domain_admin.result
+    dsrm_pw          = random_password.dsrm.result
+    alice_pw         = random_password.alice.result
+    bob_pw           = random_password.bob.result
+    svc_backup_pw    = random_password.svc_backup.result
+    wazuh_manager_ip = var.wazuh_manager_ip
+    dc_private_ip    = "" # DC doesn't need to look up itself
   })
 
   user_data_member = templatefile("${path.module}/bootstrap/00-userdata-stub.ps1.tftpl", {
-    bucket_name        = aws_s3_bucket.bootstrap.id
-    role               = "member"
-    domain_name        = var.domain_name
-    domain_netbios     = var.domain_netbios_name
-    domain_admin_pw    = random_password.domain_admin.result
-    dsrm_pw            = ""
-    alice_pw           = ""
-    bob_pw             = random_password.bob.result
-    svc_backup_pw      = ""
-    wazuh_manager_ip   = var.wazuh_manager_ip
-    dc_private_ip      = aws_instance.dc.private_ip
+    bucket_name      = aws_s3_bucket.bootstrap.id
+    role             = "member"
+    domain_name      = var.domain_name
+    domain_netbios   = var.domain_netbios_name
+    domain_admin_pw  = random_password.domain_admin.result
+    dsrm_pw          = ""
+    alice_pw         = ""
+    bob_pw           = random_password.bob.result
+    svc_backup_pw    = ""
+    wazuh_manager_ip = var.wazuh_manager_ip
+    dc_private_ip    = aws_instance.dc.private_ip
   })
 }
 
