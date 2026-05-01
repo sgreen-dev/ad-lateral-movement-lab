@@ -99,11 +99,11 @@ if (-not (Test-Path $marker)) {
     )
 
     foreach ($sub in $subcategories) {
-        $args = @('/set', "/subcategory:$($sub.Name)")
-        $args += if ($sub.S) { '/success:enable' } else { '/success:disable' }
-        $args += if ($sub.F) { '/failure:enable' } else { '/failure:disable' }
-        & auditpol.exe @args | Out-Null
-    }
+    $argList = @('/set', "/subcategory:$($sub.Name)")
+    $argList += if ($sub.S) { '/success:enable' } else { '/success:disable' }
+    $argList += if ($sub.F) { '/failure:enable' } else { '/failure:disable' }
+    & auditpol.exe @argList | Out-Null
+}
 
     # Enable command-line auditing in Process Creation events (4688)
     # Reference: https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/command-line-process-auditing
@@ -161,14 +161,14 @@ if (-not (Test-Path $marker)) {
         Invoke-WebRequest -Uri $url -OutFile $msi -UseBasicParsing
 
         $hostname = $env:COMPUTERNAME
-        $args = @(
-            '/i', $msi,
-            '/q',
-            "WAZUH_MANAGER=$env:LAB_WAZUH_IP",
-            "WAZUH_AGENT_NAME=$hostname",
-            "WAZUH_REGISTRATION_SERVER=$env:LAB_WAZUH_IP"
-        )
-        Start-Process -FilePath 'msiexec.exe' -ArgumentList $args -Wait -NoNewWindow
+        $argList = @(
+    '/i', $msi,
+    '/q',
+    "WAZUH_MANAGER=$env:LAB_WAZUH_IP",
+    "WAZUH_AGENT_NAME=$hostname",
+    "WAZUH_REGISTRATION_SERVER=$env:LAB_WAZUH_IP"
+)
+Start-Process -FilePath 'msiexec.exe' -ArgumentList $argList -Wait -NoNewWindow
 
         # Configure agent to ship Sysmon channel
         $confPath = 'C:\Program Files (x86)\ossec-agent\ossec.conf'
