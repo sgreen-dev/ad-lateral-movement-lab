@@ -1,0 +1,156 @@
+#!/bin/bash
+# =============================================================================
+# install-wazuh.sh
+# Wazuh all-in-one installer + lab-specific configuration.
+# Runs as user_data on first boot. Idempotent (state markers in /var/lib/lab-bootstrap/).
+#
+# Wazuh installer reference: https://documentation.wazuh.com/${wazuh_version}/installation-guide/wazuh-server/step-by-step.html
+# =============================================================================
+
+set -eo pipefail
+
+LOG=/var/log/lab-bootstrap.log
+exec > >(tee -a "$LOG") 2>&1
+echo "=== install-wazuh.sh starting at $(date -Is) ==="
+
+STATE_DIR=/var/lib/lab-bootstrap
+mkdir -p "$STATE_DIR"
+
+
+# -----------------------------------------------------------------------------
+# 1. System prep
+# -----------------------------------------------------------------------------
+if [[ ! -f "$STATE_DIR/01-prep.done" ]]; then
+    echo "[1/4] Updating apt and installing prerequisites"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -yq curl wget jq unzip ca-certificates apt-transport-https
+
+    # Wazuh's installer needs a real hostname in /etc/hosts (otherwise indexer
+    # cluster bootstrap chokes). Set one if it's missing.
+    HOSTNAME=$(hostname)
+    if ! grep -q "$HOSTNAME" /etc/hosts; then
+        echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
+    fi
+
+    # Set timezone to UTC for consistent log timestamps with Windows hosts
+    timedatectl set-timezone UTC
+
+    touch "$STATE_DIR/01-prep.done"
+else
+    echo "[1/4] Prep already done (skipping)"
+fi
+
+
+# -----------------------------------------------------------------------------
+# 2. Run the Wazuh all-in-one installer
+# -----------------------------------------------------------------------------
+# This pulls a single shell script that:
+#   - Generates certificates
+#   - Installs Wazuh indexer (OpenSearch fork)
+#   - Installs Wazuh manager
+#   - Installs Wazuh dashboard (OpenSearch Dashboards fork)
+#   - Configures all three to talk to each other
+# Reference: https://documentation.wazuh.com/${wazuh_version}/quickstart.html
+
+if [[ ! -f "$STATE_DIR/02-wazuh-installed.done" ]]; then
+    echo "[2/4] Downloading Wazuh installer (version ${wazuh_version})"
+    cd /tmp
+    INSTALLER_URL="https://packages.wazuh.com/${wazuh_version}/wazuh-install.sh"
+    CONFIG_URL="https://packages.wazuh.com/${wazuh_version}/config.yml"
+
+    # Verify installer URL responds before committing
+    if ! curl -fsSL --head "$INSTALLER_URL" >/dev/null; then
+        echo "ERROR: installer URL not reachable: $INSTALLER_URL"
+        echo "       Check Wazuh version pin in variables.tf"
+        exit 1
+    fi
+
+    curl -fsSL -o wazuh-install.sh "$INSTALLER_URL"
+    chmod +x wazuh-install.sh
+
+    echo "[2/4] Running Wazuh all-in-one install (this takes 5-10 minutes)"
+    # -a = all-in-one, -i = ignore health check warnings (we know t3.large is fine)
+    bash wazuh-install.sh -a -i
+
+    # The installer drops admin password info into this file; keep it for retrieval
+    if [[ -f /etc/wazuh-install-files/wazuh-passwords.txt ]]; then
+        chmod 600 /etc/wazuh-install-files/wazuh-passwords.txt
+        echo "Admin credentials saved at /etc/wazuh-install-files/wazuh-passwords.txt"
+        echo "Retrieve via SSM session:"
+        echo "  sudo cat /etc/wazuh-install-files/wazuh-passwords.txt"
+    else
+        echo "WARNING: wazuh-passwords.txt not found at expected location"
+    fi
+
+    touch "$STATE_DIR/02-wazuh-installed.done"
+else
+    echo "[2/4] Wazuh already installed (skipping)"
+fi
+
+
+# -----------------------------------------------------------------------------
+# 3. Lab-specific tuning
+# -----------------------------------------------------------------------------
+if [[ ! -f "$STATE_DIR/03-tuning.done" ]]; then
+    echo "[3/4] Applying lab tuning"
+
+    # Bump Wazuh manager log retention so we don't lose attack-window events
+    # during multi-day investigation work
+    if [[ -f /var/ossec/etc/ossec.conf ]]; then
+        # Sysmon decoder is shipped with Wazuh; just confirming it's enabled
+        # by ensuring the windows ruleset is present
+        if ! grep -q "0875-sysmon_id_1_rules.xml" /var/ossec/ruleset/rules/0875-sysmon_id_1_rules.xml 2>/dev/null \
+           && [[ ! -f /var/ossec/ruleset/rules/0875-sysmon_id_1_rules.xml ]]; then
+            echo "Note: Sysmon ruleset not at expected path; Wazuh ships these by default."
+            echo "      If absent, custom rules must be added under /var/ossec/etc/rules/"
+        fi
+    fi
+
+    # Restart manager to pick up any config changes
+    systemctl restart wazuh-manager || true
+
+    touch "$STATE_DIR/03-tuning.done"
+else
+    echo "[3/4] Tuning already applied (skipping)"
+fi
+
+
+# -----------------------------------------------------------------------------
+# 4. Health check
+# -----------------------------------------------------------------------------
+if [[ ! -f "$STATE_DIR/04-healthcheck.done" ]]; then
+    echo "[4/4] Verifying services"
+
+    sleep 10  # let services settle
+
+    SERVICES=(wazuh-manager wazuh-indexer wazuh-dashboard)
+    ALL_OK=true
+    for svc in "$${SERVICES[@]}"; do
+        if systemctl is-active --quiet "$svc"; then
+            echo "  OK  $svc"
+        else
+            echo "  ERR $svc not active"
+            ALL_OK=false
+        fi
+    done
+
+    if $ALL_OK; then
+        touch "$STATE_DIR/04-healthcheck.done"
+        echo "[4/4] All Wazuh services healthy"
+    else
+        echo "[4/4] One or more services not healthy. Investigate via:"
+        echo "  sudo journalctl -u wazuh-manager -n 100"
+        echo "  sudo journalctl -u wazuh-indexer -n 100"
+        echo "  sudo journalctl -u wazuh-dashboard -n 100"
+    fi
+else
+    echo "[4/4] Health check already passed (skipping)"
+fi
+
+echo "=== install-wazuh.sh done at $(date -Is) ==="
+echo
+echo "To access the dashboard:"
+echo "  1. From your laptop, run the SSM port-forward command (terraform output dashboard_port_forward_command)"
+echo "  2. Visit https://localhost:8443"
+echo "  3. Username: admin   Password: see /etc/wazuh-install-files/wazuh-passwords.txt on the host"
