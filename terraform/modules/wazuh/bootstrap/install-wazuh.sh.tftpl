@@ -11,7 +11,7 @@ set -eo pipefail
 
 LOG=/var/log/lab-bootstrap.log
 exec > >(tee -a "$LOG") 2>&1
-echo "=== install-wazuh.sh starting at $(date -Is) ==="
+echo "=== install-wazuh.sh starting at $$(date -Is) ==="
 
 STATE_DIR=/var/lib/lab-bootstrap
 mkdir -p "$STATE_DIR"
@@ -28,7 +28,7 @@ if [[ ! -f "$STATE_DIR/01-prep.done" ]]; then
 
     # Wazuh's installer needs a real hostname in /etc/hosts (otherwise indexer
     # cluster bootstrap chokes). Set one if it's missing.
-    HOSTNAME=$(hostname)
+    HOSTNAME=$$(hostname)
     if ! grep -q "$HOSTNAME" /etc/hosts; then
         echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
     fi
@@ -95,13 +95,9 @@ fi
 if [[ ! -f "$STATE_DIR/03-tuning.done" ]]; then
     echo "[3/4] Applying lab tuning"
 
-    # Bump Wazuh manager log retention so we don't lose attack-window events
-    # during multi-day investigation work
     if [[ -f /var/ossec/etc/ossec.conf ]]; then
-        # Sysmon decoder is shipped with Wazuh; just confirming it's enabled
-        # by ensuring the windows ruleset is present
-        if ! grep -q "0875-sysmon_id_1_rules.xml" /var/ossec/ruleset/rules/0875-sysmon_id_1_rules.xml 2>/dev/null \
-           && [[ ! -f /var/ossec/ruleset/rules/0875-sysmon_id_1_rules.xml ]]; then
+        # Sysmon decoder ships with Wazuh; just verifying the rule file is present
+        if [[ ! -f /var/ossec/ruleset/rules/0875-sysmon_id_1_rules.xml ]]; then
             echo "Note: Sysmon ruleset not at expected path; Wazuh ships these by default."
             echo "      If absent, custom rules must be added under /var/ossec/etc/rules/"
         fi
@@ -148,7 +144,7 @@ else
     echo "[4/4] Health check already passed (skipping)"
 fi
 
-echo "=== install-wazuh.sh done at $(date -Is) ==="
+echo "=== install-wazuh.sh done at $$(date -Is) ==="
 echo
 echo "To access the dashboard:"
 echo "  1. From your laptop, run the SSM port-forward command (terraform output dashboard_port_forward_command)"

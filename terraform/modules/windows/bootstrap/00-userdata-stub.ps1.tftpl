@@ -1,39 +1,37 @@
 <powershell>
 # =============================================================================
 # user_data stub — pulls real bootstrap scripts from S3 and runs them.
-# Templated by Terraform; the ${VAR} substitutions are filled in at apply time.
-#
-# This script must stay TINY (well under 16KB user_data limit). All real logic
-# lives in the S3-hosted scripts. This stub's only job is to fetch and dispatch.
+# Templated by Terraform. PS variables and sub-expressions are escaped with
+# double-dollar throughout this file so Terraform leaves them alone.
 # =============================================================================
 
-$ErrorActionPreference = 'Stop'
-$LogPath = 'C:\bootstrap.log'
-Start-Transcript -Path $LogPath -Append -Force | Out-Null
+$$ErrorActionPreference = 'Stop'
+$$LogPath = 'C:\bootstrap.log'
+Start-Transcript -Path $$LogPath -Append -Force | Out-Null
 
-Write-Host "=== userdata stub starting at $(Get-Date -Format o) ==="
+Write-Host "=== userdata stub starting at $$(Get-Date -Format o) ==="
 
 # State directory — scripts use this to track progress across reboots
-$StateDir = 'C:\bootstrap-state'
-New-Item -ItemType Directory -Path $StateDir -Force | Out-Null
+$$StateDir = 'C:\bootstrap-state'
+New-Item -ItemType Directory -Path $$StateDir -Force | Out-Null
 
 # Context passed to all scripts via env vars (stable across reboots once we
 # write them to machine-scoped environment as a backup mechanism)
-$env:LAB_BUCKET           = '${bucket_name}'
-$env:LAB_ROLE             = '${role}'
-$env:LAB_DOMAIN_NAME      = '${domain_name}'
-$env:LAB_DOMAIN_NETBIOS   = '${domain_netbios}'
-$env:LAB_DOMAIN_ADMIN_PW  = '${domain_admin_pw}'
-$env:LAB_DSRM_PW          = '${dsrm_pw}'
-$env:LAB_ALICE_PW         = '${alice_pw}'
-$env:LAB_BOB_PW           = '${bob_pw}'
-$env:LAB_SVC_BACKUP_PW    = '${svc_backup_pw}'
-$env:LAB_WAZUH_IP         = '${wazuh_manager_ip}'
-$env:LAB_DC_IP            = '${dc_private_ip}'
+$$env:LAB_BUCKET           = '${bucket_name}'
+$$env:LAB_ROLE             = '${role}'
+$$env:LAB_DOMAIN_NAME      = '${domain_name}'
+$$env:LAB_DOMAIN_NETBIOS   = '${domain_netbios}'
+$$env:LAB_DOMAIN_ADMIN_PW  = '${domain_admin_pw}'
+$$env:LAB_DSRM_PW          = '${dsrm_pw}'
+$$env:LAB_ALICE_PW         = '${alice_pw}'
+$$env:LAB_BOB_PW           = '${bob_pw}'
+$$env:LAB_SVC_BACKUP_PW    = '${svc_backup_pw}'
+$$env:LAB_WAZUH_IP         = '${wazuh_manager_ip}'
+$$env:LAB_DC_IP            = '${dc_private_ip}'
 
 # Persist to machine env so post-reboot scheduled tasks can read them
-foreach ($n in @('LAB_BUCKET','LAB_ROLE','LAB_DOMAIN_NAME','LAB_DOMAIN_NETBIOS','LAB_DOMAIN_ADMIN_PW','LAB_DSRM_PW','LAB_ALICE_PW','LAB_BOB_PW','LAB_SVC_BACKUP_PW','LAB_WAZUH_IP','LAB_DC_IP')) {
-    [Environment]::SetEnvironmentVariable($n, (Get-Item env:$n).Value, 'Machine')
+foreach ($$n in @('LAB_BUCKET','LAB_ROLE','LAB_DOMAIN_NAME','LAB_DOMAIN_NETBIOS','LAB_DOMAIN_ADMIN_PW','LAB_DSRM_PW','LAB_ALICE_PW','LAB_BOB_PW','LAB_SVC_BACKUP_PW','LAB_WAZUH_IP','LAB_DC_IP')) {
+    [Environment]::SetEnvironmentVariable($$n, (Get-Item env:$$n).Value, 'Machine')
 }
 
 # Wait for AWS Tools / SSM agent to be ready (they ship preinstalled on the AMI)
@@ -43,31 +41,31 @@ if (-not (Get-Module AWSPowerShell.NetCore)) {
 }
 
 # Pull all bootstrap scripts from S3
-$ScriptDir = 'C:\bootstrap'
-New-Item -ItemType Directory -Path $ScriptDir -Force | Out-Null
+$$ScriptDir = 'C:\bootstrap'
+New-Item -ItemType Directory -Path $$ScriptDir -Force | Out-Null
 
-$scripts = @('10-common.ps1', '20-promote-dc.ps1', '30-domain-join.ps1', '40-install-art.ps1')
-foreach ($s in $scripts) {
-    $local = Join-Path $ScriptDir $s
-    Write-Host "Downloading s3://$env:LAB_BUCKET/bootstrap/$s -> $local"
-    Read-S3Object -BucketName $env:LAB_BUCKET -Key "bootstrap/$s" -File $local | Out-Null
+$$scripts = @('10-common.ps1', '20-promote-dc.ps1', '30-domain-join.ps1', '40-install-art.ps1')
+foreach ($$s in $$scripts) {
+    $$local = Join-Path $$ScriptDir $$s
+    Write-Host "Downloading s3://$$env:LAB_BUCKET/bootstrap/$$s -> $$local"
+    Read-S3Object -BucketName $$env:LAB_BUCKET -Key "bootstrap/$$s" -File $$local | Out-Null
 }
 
 # Phase 1 — common bootstrap (Sysmon, audit policy, PS logging, Wazuh agent if IP known)
 Write-Host "=== running 10-common.ps1 ==="
-& (Join-Path $ScriptDir '10-common.ps1')
+& (Join-Path $$ScriptDir '10-common.ps1')
 
 # Phase 2 — role-specific
-if ($env:LAB_ROLE -eq 'dc') {
+if ($$env:LAB_ROLE -eq 'dc') {
     Write-Host "=== running 20-promote-dc.ps1 ==="
-    & (Join-Path $ScriptDir '20-promote-dc.ps1')
-} elseif ($env:LAB_ROLE -eq 'member') {
+    & (Join-Path $$ScriptDir '20-promote-dc.ps1')
+} elseif ($$env:LAB_ROLE -eq 'member') {
     Write-Host "=== running 30-domain-join.ps1 ==="
-    & (Join-Path $ScriptDir '30-domain-join.ps1')
+    & (Join-Path $$ScriptDir '30-domain-join.ps1')
     # ART install runs after domain join completes (post-reboot, via scheduled task)
 }
 
-Write-Host "=== userdata stub finished at $(Get-Date -Format o) ==="
+Write-Host "=== userdata stub finished at $$(Get-Date -Format o) ==="
 Stop-Transcript
 </powershell>
 <persist>true</persist>
