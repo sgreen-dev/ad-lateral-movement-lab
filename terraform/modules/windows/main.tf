@@ -197,7 +197,7 @@ resource "aws_iam_instance_profile" "windows" {
 # DC01 — accepts AD ports from VPC, RDP/WinRM from Kali subnet only
 resource "aws_security_group" "dc" {
   name        = "${var.project}-dc-sg"
-  description = "Domain controller — AD ports from VPC, mgmt from Kali subnet"
+  description = "Domain controller - AD ports from VPC, mgmt from Kali subnet"
   vpc_id      = var.vpc_id
 
   # AD DS / Kerberos / LDAP / DNS / SMB from anywhere in the VPC
@@ -258,7 +258,7 @@ resource "aws_security_group" "dc" {
 # WIN01 — receives RDP/SMB/WinRM from both Kali subnet (attacker) and DC subnet
 resource "aws_security_group" "member" {
   name        = "${var.project}-member-sg"
-  description = "Member server — accepts lateral movement vectors from Kali and DC"
+  description = "Member server - accepts lateral movement vectors from Kali and DC"
   vpc_id      = var.vpc_id
 
   ingress {

@@ -79,7 +79,7 @@ resource "aws_iam_instance_profile" "wazuh" {
 
 resource "aws_security_group" "wazuh" {
   name        = "${var.project}-wazuh-sg"
-  description = "Wazuh SIEM — agent comms from VPC, dashboard via SSM only"
+  description = "Wazuh SIEM - agent comms from VPC, dashboard via SSM only"
   vpc_id      = var.vpc_id
 
   # Wazuh agent communication (1514/tcp) — TLS, agents -> manager

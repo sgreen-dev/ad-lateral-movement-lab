@@ -120,7 +120,7 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "nat" {
   name        = "${var.project}-nat-sg"
-  description = "NAT instance — accept all from VPC, allow all egress"
+  description = "NAT instance - accept all from VPC, allow all egress"
   vpc_id      = aws_vpc.this.id
 
   ingress {
@@ -240,7 +240,7 @@ resource "aws_route_table_association" "private" {
 
 resource "aws_security_group" "vpc_endpoints" {
   name        = "${var.project}-vpce-sg"
-  description = "VPC interface endpoints — accept HTTPS from VPC"
+  description = "VPC interface endpoints - accept HTTPS from VPC"
   vpc_id      = aws_vpc.this.id
 
   ingress {

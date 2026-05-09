@@ -77,7 +77,7 @@ resource "aws_iam_instance_profile" "kali" {
 
 resource "aws_security_group" "kali" {
   name        = "${var.project}-kali-sg"
-  description = "Kali attacker — SSH from operator IP only, all egress allowed"
+  description = "Kali attacker - SSH from operator IP only, all egress allowed"
   vpc_id      = var.vpc_id
 
   ingress {
