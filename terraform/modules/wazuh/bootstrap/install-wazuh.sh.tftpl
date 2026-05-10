@@ -11,7 +11,7 @@ set -eo pipefail
 
 LOG=/var/log/lab-bootstrap.log
 exec > >(tee -a "$LOG") 2>&1
-echo "=== install-wazuh.sh starting at $$(date -Is) ==="
+echo "=== install-wazuh.sh starting at $(date -Is) ==="
 
 STATE_DIR=/var/lib/lab-bootstrap
 mkdir -p "$STATE_DIR"
@@ -28,7 +28,7 @@ if [[ ! -f "$STATE_DIR/01-prep.done" ]]; then
 
     # Wazuh's installer needs a real hostname in /etc/hosts (otherwise indexer
     # cluster bootstrap chokes). Set one if it's missing.
-    HOSTNAME=$$(hostname)
+    HOSTNAME=$(hostname)
     if ! grep -q "$HOSTNAME" /etc/hosts; then
         echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
     fi
@@ -144,7 +144,7 @@ else
     echo "[4/4] Health check already passed (skipping)"
 fi
 
-echo "=== install-wazuh.sh done at $$(date -Is) ==="
+echo "=== install-wazuh.sh done at $(date -Is) ==="
 echo
 echo "To access the dashboard:"
 echo "  1. From your laptop, run the SSM port-forward command (terraform output dashboard_port_forward_command)"
