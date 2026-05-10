@@ -157,7 +157,7 @@ if (-not (Test-Path $marker)) {
         New-Item -ItemType Directory -Path $tmp -Force | Out-Null
         $msi = Join-Path $tmp 'wazuh-agent.msi'
         # Wazuh 4.x Windows agent — pin a major version
-        $url = 'https://packages.wazuh.com/4.x/windows/wazuh-agent-4.7.5-1.msi'
+        $url = 'https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.5-1.msi'
         Invoke-WebRequest -Uri $url -OutFile $msi -UseBasicParsing
 
         $hostname = $env:COMPUTERNAME

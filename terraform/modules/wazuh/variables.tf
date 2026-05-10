@@ -37,7 +37,7 @@ variable "data_volume_size_gb" {
 variable "wazuh_version" {
   description = "Wazuh version to install. Pinned for reproducibility."
   type        = string
-  default     = "4.7.5"
+  default     = "4.14"
 }
 
 variable "ami_owner" {
