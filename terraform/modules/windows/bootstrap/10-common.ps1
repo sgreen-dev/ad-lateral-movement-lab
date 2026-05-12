@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # 10-common.ps1
 # Runs on BOTH hosts (DC and member). Idempotent.
 #
@@ -46,13 +46,13 @@ if (-not (Test-Path $marker)) {
     Invoke-WebRequest -Uri 'https://download.sysinternals.com/files/Sysmon.zip' -OutFile $sysmonZip -UseBasicParsing
     Expand-Archive -Path $sysmonZip -DestinationPath $tmp -Force
 
-    # SwiftOnSecurity config — pinned to a specific commit for reproducibility
+    # SwiftOnSecurity config - pinned to a specific commit for reproducibility
     # Reference: https://github.com/SwiftOnSecurity/sysmon-config
     $configUrl = 'https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml'
     $configPath = Join-Path $tmp 'sysmonconfig.xml'
     Invoke-WebRequest -Uri $configUrl -OutFile $configPath -UseBasicParsing
 
-    # Install (works on AMD64 — for ARM hosts use Sysmon.exe; we're x86_64)
+    # Install (works on AMD64 - for ARM hosts use Sysmon.exe; we're x86_64)
     & "$tmp\Sysmon64.exe" -accepteula -i $configPath
     Start-Sleep -Seconds 3
 
@@ -150,13 +150,13 @@ if (-not (Test-Path $marker)) {
 $marker = Join-Path $StateDir '10-wazuh.done'
 if (-not (Test-Path $marker)) {
     if ([string]::IsNullOrWhiteSpace($env:LAB_WAZUH_IP)) {
-        Write-Host "[5/5] Wazuh manager IP not set — skipping agent install. Re-run bootstrap or install manually after Wazuh is up."
+        Write-Host "[5/5] Wazuh manager IP not set - skipping agent install. Re-run bootstrap or install manually after Wazuh is up."
     } else {
         Write-Host "[5/5] Installing Wazuh agent, manager = $env:LAB_WAZUH_IP"
         $tmp = 'C:\wazuh-install'
         New-Item -ItemType Directory -Path $tmp -Force | Out-Null
         $msi = Join-Path $tmp 'wazuh-agent.msi'
-        # Wazuh 4.x Windows agent — pin a major version
+        # Wazuh 4.x Windows agent - pin a major version
         $url = 'https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.5-1.msi'
         Invoke-WebRequest -Uri $url -OutFile $msi -UseBasicParsing
 

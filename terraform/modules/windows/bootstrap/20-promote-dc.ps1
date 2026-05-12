@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # 20-promote-dc.ps1
 # Runs ONLY on DC01.
 #
@@ -57,7 +57,7 @@ if (-not (Test-Path $markerA)) {
 }
 
 # -----------------------------------------------------------------------------
-# Phase B: post-promotion — create test users
+# Phase B: post-promotion - create test users
 # -----------------------------------------------------------------------------
 if (-not (Test-Path $markerB)) {
     Write-Host "[B] Resuming after promotion reboot. Verifying AD readiness..."
@@ -81,7 +81,7 @@ if (-not (Test-Path $markerB)) {
 
     $usersOu = "CN=Users,$((Get-ADDomain).DistinguishedName)"
 
-    # alice — standard user
+    # alice - standard user
     if (-not (Get-ADUser -Filter "SamAccountName -eq 'alice'" -ErrorAction SilentlyContinue)) {
         New-ADUser `
             -Name 'alice' `
@@ -96,7 +96,7 @@ if (-not (Test-Path $markerB)) {
         Write-Host "Created user alice"
     }
 
-    # bob — will become local admin on WIN01 (added by member host's bootstrap)
+    # bob - will become local admin on WIN01 (added by member host's bootstrap)
     if (-not (Get-ADUser -Filter "SamAccountName -eq 'bob'" -ErrorAction SilentlyContinue)) {
         New-ADUser `
             -Name 'bob' `
@@ -111,7 +111,7 @@ if (-not (Test-Path $markerB)) {
         Write-Host "Created user bob"
     }
 
-    # svc_backup — service account, victim of the WinRM lateral movement scenario
+    # svc_backup - service account, victim of the WinRM lateral movement scenario
     if (-not (Get-ADUser -Filter "SamAccountName -eq 'svc_backup'" -ErrorAction SilentlyContinue)) {
         New-ADUser `
             -Name 'svc_backup' `
@@ -119,7 +119,7 @@ if (-not (Test-Path $markerB)) {
             -UserPrincipalName "svc_backup@$env:LAB_DOMAIN_NAME" `
             -GivenName 'Backup' -Surname 'Service' `
             -DisplayName 'svc_backup' `
-            -Description 'Lab service account — used for WinRM lateral movement emulation' `
+            -Description 'Lab service account - used for WinRM lateral movement emulation' `
             -AccountPassword (ConvertTo-SecureString $env:LAB_SVC_BACKUP_PW -AsPlainText -Force) `
             -Enabled $true `
             -PasswordNeverExpires $true `

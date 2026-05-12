@@ -1,9 +1,9 @@
-# =============================================================================
+﻿# =============================================================================
 # 30-domain-join.ps1
 # Runs ONLY on WIN01 (member server).
 #
 # Phase A: wait for DC to be reachable, then domain-join. Reboots.
-# Phase B: post-reboot — add bob to local Administrators, arm ART install task.
+# Phase B: post-reboot - add bob to local Administrators, arm ART install task.
 # =============================================================================
 
 $ErrorActionPreference = 'Stop'
@@ -62,7 +62,7 @@ if (-not (Test-Path $markerA)) {
 }
 
 # -----------------------------------------------------------------------------
-# Phase B: post-join — local admin assignment + ART install
+# Phase B: post-join - local admin assignment + ART install
 # -----------------------------------------------------------------------------
 if (-not (Test-Path $markerB)) {
     Write-Host "[B] Post-join. Adding $env:LAB_DOMAIN_NETBIOS\bob to local Administrators."
@@ -74,10 +74,10 @@ if (-not (Test-Path $markerB)) {
         Add-LocalGroupMember -Group 'Administrators' -Member "$env:LAB_DOMAIN_NETBIOS\bob" -ErrorAction Stop
         Write-Host "Added $env:LAB_DOMAIN_NETBIOS\bob to local Administrators"
     } catch {
-        Write-Warning "Could not add bob to Administrators yet: $_  — will be retried on next boot"
+        Write-Warning "Could not add bob to Administrators yet: $_  - will be retried on next boot"
     }
 
-    # Run the ART installer immediately rather than scheduling — we're already post-reboot
+    # Run the ART installer immediately rather than scheduling - we're already post-reboot
     $artScript = 'C:\bootstrap\40-install-art.ps1'
     if (Test-Path $artScript) {
         Write-Host "[B] Running ART installer"

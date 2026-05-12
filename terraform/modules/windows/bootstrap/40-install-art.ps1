@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # 40-install-art.ps1
 # Runs on WIN01 ONLY, after domain-join. Idempotent.
 #
@@ -27,7 +27,7 @@ Add-MpPreference -ExclusionPath 'C:\AtomicRedTeam' -ErrorAction SilentlyContinue
 # Set process-scope execution policy
 Set-ExecutionPolicy Bypass -Scope Process -Force
 
-# TLS 1.2 — required for github.com on Server 2022 default config
+# TLS 1.2 - required for github.com on Server 2022 default config
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 # Install Invoke-AtomicRedTeam (the runner) + atomics (the test library)
