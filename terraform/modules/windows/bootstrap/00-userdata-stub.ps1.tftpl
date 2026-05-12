@@ -29,9 +29,12 @@ $env:LAB_SVC_BACKUP_PW    = '${svc_backup_pw}'
 $env:LAB_WAZUH_IP         = '${wazuh_manager_ip}'
 $env:LAB_DC_IP            = '${dc_private_ip}'
 
-# Persist to machine env so post-reboot scheduled tasks can read them
+# Persist to machine env so post-reboot scheduled tasks can read them.
+# Handle empty / missing values gracefully (some vars are blank on the DC).
 foreach ($n in @('LAB_BUCKET','LAB_ROLE','LAB_DOMAIN_NAME','LAB_DOMAIN_NETBIOS','LAB_DOMAIN_ADMIN_PW','LAB_DSRM_PW','LAB_ALICE_PW','LAB_BOB_PW','LAB_SVC_BACKUP_PW','LAB_WAZUH_IP','LAB_DC_IP')) {
-    [Environment]::SetEnvironmentVariable($n, (Get-Item env:$n).Value, 'Machine')
+    $val = [Environment]::GetEnvironmentVariable($n, 'Process')
+    if ($null -eq $val) { $val = '' }
+    [Environment]::SetEnvironmentVariable($n, $val, 'Machine')
 }
 
 # Wait for AWS Tools / SSM agent to be ready (they ship preinstalled on the AMI)
