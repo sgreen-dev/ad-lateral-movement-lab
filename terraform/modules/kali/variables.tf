@@ -48,5 +48,5 @@ variable "ami_owner" {
 variable "ami_name_pattern" {
   description = "AMI name pattern for Ubuntu 22.04 LTS amd64 server."
   type        = string
-  default     = "ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*"
+  default     = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
 }
