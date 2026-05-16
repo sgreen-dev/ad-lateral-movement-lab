@@ -1,0 +1,36 @@
+title: NTLM Network Logon - Possible Lateral Movement
+id: a1b2c3d4-7777-4e21-9b1a-1234567890ab
+status: experimental
+description: |
+    Detects successful network logons (EventID 4624 / LogonType 3) authenticated via NTLM
+    by a real user account. NTLM network logons by user accounts (vs. machine accounts ending
+    in '$') are uncommon in Kerberos-default Windows AD environments and are a strong indicator
+    of lateral movement using stolen credentials (e.g. pass-the-hash, psexec.py, NetExec, etc.).
+references:
+    - https://attack.mitre.org/techniques/T1021/002/
+    - https://attack.mitre.org/techniques/T1550/002/
+author: Shurron Green
+date: 2026/05/16
+tags:
+    - attack.lateral_movement
+    - attack.t1021.002
+    - attack.t1550.002
+logsource:
+    product: windows
+    service: security
+    category: authentication
+detection:
+    selection:
+        EventID: 4624
+        LogonType: 3
+        AuthenticationPackageName: NTLM
+    filter_machine_account:
+        TargetUserName|endswith: '$'
+    filter_anonymous:
+        TargetUserName: 'ANONYMOUS LOGON'
+    condition: selection and not (filter_machine_account or filter_anonymous)
+falsepositives:
+    - Legacy applications hardcoded to use NTLM
+    - NTLM fallback when Kerberos is unavailable (e.g. accessing host by IP not FQDN)
+    - Vulnerability scanners performing authenticated scans
+level: medium
