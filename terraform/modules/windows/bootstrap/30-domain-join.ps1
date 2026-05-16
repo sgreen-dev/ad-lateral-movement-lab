@@ -71,7 +71,7 @@ if (-not (Test-Path $markerB)) {
     Start-Sleep -Seconds 15
 
     try {
-        Add-LocalGroupMember -Group 'Administrators' -Member "$env:LAB_DOMAIN_NETBIOS\bob" -ErrorAction Stop
+        $alreadyMember = (Get-LocalGroupMember -Group 'Administrators' -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "$env:LAB_DOMAIN_NETBIOS\bob" }); if (-not $alreadyMember) { Add-LocalGroupMember -Group 'Administrators' -Member "$env:LAB_DOMAIN_NETBIOS\bob" -ErrorAction Stop }
         Write-Host "Added $env:LAB_DOMAIN_NETBIOS\bob to local Administrators"
     } catch {
         Write-Warning "Could not add bob to Administrators yet: $_  - will be retried on next boot"

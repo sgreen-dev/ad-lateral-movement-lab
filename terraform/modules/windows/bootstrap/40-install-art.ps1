@@ -38,7 +38,7 @@ New-Item -ItemType Directory -Path 'C:\AtomicRedTeam' -Force | Out-Null
 Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
 
 Write-Host "Running ART installer (this also pulls the atomics library)"
-& $installerPath -Force
+. $installerPath
 Install-AtomicRedTeam -getAtomics -Force
 
 # Verify
