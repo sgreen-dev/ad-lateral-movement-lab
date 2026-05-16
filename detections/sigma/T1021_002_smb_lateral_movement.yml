@@ -1,5 +1,5 @@
 title: NTLM Network Logon - Possible Lateral Movement
-id: a1b2c3d4-7777-4e21-9b1a-1234567890ab
+id: 96df98b5-3f56-4ec6-8d01-fc432a400f4e
 status: experimental
 description: |
     Detects successful network logons (EventID 4624 / LogonType 3) authenticated via NTLM
