@@ -8,9 +8,17 @@
 
 $ErrorActionPreference = 'Stop'
 $StateDir = 'C:\bootstrap-state'
-$LogPath  = 'C:\bootstrap-member.log'
+$LogPath = 'C:\bootstrap-member.log'
 Start-Transcript -Path $LogPath -Append -Force | Out-Null
 Write-Host "=== 30-domain-join.ps1 starting at $(Get-Date -Format o) ==="
+
+# Fail-loud guards: refuse to run with missing inputs rather than
+# producing a misleading "domain does not exist" error 10 minutes later.
+foreach ($required in @('LAB_DC_IP', 'LAB_DOMAIN_NAME', 'LAB_DOMAIN_NETBIOS', 'LAB_DOMAIN_ADMIN_PW')) {
+    if (-not (Get-Item "env:$required" -ErrorAction SilentlyContinue).Value) {
+        throw "Required environment variable $required is empty or unset"
+    }
+}
 
 $markerA = Join-Path $StateDir '30-joined.done'
 $markerB = Join-Path $StateDir '30-postjoin.done'
@@ -19,30 +27,36 @@ $markerB = Join-Path $StateDir '30-postjoin.done'
 # Phase A: domain join (pre-reboot)
 # -----------------------------------------------------------------------------
 if (-not (Test-Path $markerA)) {
-    Write-Host "[A] Waiting for DC at $env:LAB_DC_IP to become reachable on TCP/389..."
 
-    $deadline = (Get-Date).AddMinutes(20)  # DC promotion takes 8-12 min, plus reboot
-    $reachable = $false
-    while ((Get-Date) -lt $deadline) {
-        $tnc = Test-NetConnection -ComputerName $env:LAB_DC_IP -Port 389 -WarningAction SilentlyContinue
-        if ($tnc.TcpTestSucceeded) {
-            $reachable = $true
-            break
-        }
-        Write-Host "  DC not yet reachable, sleeping 30s..."
-        Start-Sleep -Seconds 30
-    }
-    if (-not $reachable) { throw "DC at $env:LAB_DC_IP did not become reachable within 20 minutes" }
-
-    # Point DNS at the DC so domain-join can resolve the SRV records
+    # Point DNS at the DC FIRST so SRV-record resolution can succeed
     Write-Host "[A] Setting DNS server to DC ($env:LAB_DC_IP)"
     $adapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | Select-Object -First 1
     Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses $env:LAB_DC_IP
 
-    # Brief settle
-    Start-Sleep -Seconds 10
+    # Wait for the domain to be JOIN-READY, not just for LDAP to be listening.
+    # _ldap._tcp.dc._msdcs.<domain> is the SRV record Add-Computer uses to
+    # discover a DC; it is only registered once Netlogon is fully up and the
+    # directory is integrated with DNS. This is the right probe.
+    Write-Host "[A] Waiting for $env:LAB_DOMAIN_NAME to be join-ready (SRV records)..."
+    $deadline = (Get-Date).AddMinutes(20)  # DC promotion takes 8-12 min, plus reboot
+    $ready = $false
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $srv = Resolve-DnsName -Type SRV -Name "_ldap._tcp.dc._msdcs.$env:LAB_DOMAIN_NAME" -Server $env:LAB_DC_IP -ErrorAction Stop
+            if ($srv) {
+                $ready = $true
+                Write-Host "  SRV records present - domain is join-ready"
+                break
+            }
+        }
+        catch {
+            Write-Host "  Domain not yet join-ready, sleeping 30s..."
+            Start-Sleep -Seconds 30
+        }
+    }
+    if (-not $ready) { throw "Domain $env:LAB_DOMAIN_NAME did not become join-ready within 20 minutes" }
 
-    # Schedule resume
+    # Schedule resume so Phase B runs after the reboot triggered by Add-Computer
     $taskName = 'LabBootstrapResume'
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-ExecutionPolicy Bypass -File C:\bootstrap\30-domain-join.ps1"
     $trigger = New-ScheduledTaskTrigger -AtStartup
@@ -55,9 +69,14 @@ if (-not (Test-Path $markerA)) {
         (ConvertTo-SecureString $env:LAB_DOMAIN_ADMIN_PW -AsPlainText -Force)
     )
 
+    # NOTE: marker is created AFTER the join succeeds, not before. If the join
+    # fails, the resume task will retry Phase A on next boot.
+    Add-Computer -DomainName $env:LAB_DOMAIN_NAME -Credential $cred -Force
     New-Item -ItemType File -Path $markerA -Force | Out-Null
-    Add-Computer -DomainName $env:LAB_DOMAIN_NAME -Credential $cred -Restart -Force
+
+    Write-Host "[A] Join succeeded - restarting"
     Stop-Transcript
+    Restart-Computer -Force
     exit 0
 }
 
@@ -73,7 +92,8 @@ if (-not (Test-Path $markerB)) {
     try {
         $alreadyMember = (Get-LocalGroupMember -Group 'Administrators' -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "$env:LAB_DOMAIN_NETBIOS\bob" }); if (-not $alreadyMember) { Add-LocalGroupMember -Group 'Administrators' -Member "$env:LAB_DOMAIN_NETBIOS\bob" -ErrorAction Stop }
         Write-Host "Added $env:LAB_DOMAIN_NETBIOS\bob to local Administrators"
-    } catch {
+    }
+    catch {
         Write-Warning "Could not add bob to Administrators yet: $_  - will be retried on next boot"
     }
 
