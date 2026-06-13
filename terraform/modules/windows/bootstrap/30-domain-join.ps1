@@ -97,6 +97,13 @@ if (-not (Test-Path $markerB)) {
         Write-Warning "Could not add bob to Administrators yet: $_  - will be retried on next boot"
     }
 
+    # Enable SMB inbound (TCP 445) so SMB-based lateral movement (T1021.002) can
+    # reach this host. Server 2022 blocks File and Printer Sharing by default.
+    # Scoped to the single SMB-In rule (by stable -Name, not display name) rather
+    # than the whole group, to keep attacker-facing surface minimal.
+    Write-Host "[B] Enabling File and Printer Sharing (SMB-In) firewall rule"
+    Enable-NetFirewallRule -Name 'FPS-SMB-In-TCP' -ErrorAction SilentlyContinue
+
     # Run the ART installer immediately rather than scheduling - we're already post-reboot
     $artScript = 'C:\bootstrap\40-install-art.ps1'
     if (Test-Path $artScript) {
