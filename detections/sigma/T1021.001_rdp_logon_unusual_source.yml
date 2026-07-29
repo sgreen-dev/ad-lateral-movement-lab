@@ -8,7 +8,7 @@ description: |
 references:
   - https://attack.mitre.org/techniques/T1021/001/
   - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.001/T1021.001.md
-author: '[Your Name]'
+author: Shurron Green
 date: 2026-04-28
 modified: 2026-04-28
 tags:
