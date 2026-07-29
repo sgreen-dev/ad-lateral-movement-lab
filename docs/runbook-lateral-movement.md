@@ -1,7 +1,7 @@
 # Runbook: Lateral Movement Triage
 
 > **Audience:** Tier 1/2 SOC analyst on shift.
-> **Trigger:** Any alert from rules in `detections/sigma/T1021.*` or `correlation_winrm_to_powershell.yml`.
+> **Trigger:** Any alert from rules in `detections/sigma/T1021.*` (or the planned WinRM → PowerShell correlation rule, Phase 4).
 > **Status:** skeleton — populated in Phase 5.
 
 ---

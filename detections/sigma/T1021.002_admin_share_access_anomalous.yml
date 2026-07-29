@@ -8,7 +8,7 @@ description: |
 references:
   - https://attack.mitre.org/techniques/T1021/002/
   - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.002/T1021.002.md
-author: '[Your Name]'
+author: Shurron Green
 date: 2026-04-28
 tags:
   - attack.lateral_movement

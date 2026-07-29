@@ -9,7 +9,7 @@ description: |
 references:
   - https://attack.mitre.org/techniques/T1059/001/
   - https://github.com/SigmaHQ/sigma/tree/master/rules/windows/powershell
-author: '[Your Name]'
+author: Shurron Green
 date: 2026-04-28
 tags:
   - attack.execution

@@ -64,8 +64,6 @@ jobs:
               # Warn (not fail) on placeholder UUIDs while in scaffold phase
               try:
                   u = uuid.UUID(str(doc.get("id", "")))
-                  if str(u) == "00000000-0000-0000-0000-000000000001"[:8] + "-0000-0000-0000-000000000001"[8:]:
-                      pass
                   if str(u).startswith("00000000-"):
                       print(f"[warn] {p}: placeholder UUID — replace before claiming production-ready")
               except ValueError:

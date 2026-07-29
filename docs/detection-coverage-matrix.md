@@ -10,11 +10,12 @@ Maps every authored detection to its MITRE ATT&CK technique, log source, false-p
 
 | ATT&CK ID | Technique | Sigma rule | Log source(s) | Key fields | False-positive risk | Tested |
 |---|---|---|---|---|---|---|
+| T1021.002 | NTLM network logon | `T1021_002_smb_lateral_movement.yml` | Security 4624 | LogonType=3, AuthenticationPackageName=NTLM, TargetUserName | Medium — NTLM fallback / scanners | ⏳ |
+| T1021.002 | SMB / Admin shares (variant) | `T1021.002_admin_share_access_anomalous.yml` | Security 5140/5145, Sysmon EID 3 | ShareName, RelativeTargetName | High — backup software | ⏳ |
 | T1021.001 | RDP | `T1021.001_rdp_logon_unusual_source.yml` | Security 4624 | LogonType=10, IpAddress | Medium — admins legitimately RDP | ⏳ |
-| T1021.002 | SMB / Admin shares | `T1021.002_admin_share_access_anomalous.yml` | Security 5140/5145, Sysmon EID 3 | ShareName, RelativeTargetName | High — backup software | ⏳ |
 | T1021.006 | WinRM | `T1021.006_winrm_execution.yml` | Security 4624, Sysmon EID 1 | LogonType=3, ParentImage=wsmprovhost.exe | Low — narrow signal | ⏳ |
 | T1059.001 | PowerShell | `T1059.001_powershell_post_winrm.yml` | Sysmon EID 1, PS 4104 | CommandLine, ScriptBlockText | Medium — legit admin scripts | ⏳ |
-| Correlation | WinRM → PowerShell | `correlation_winrm_to_powershell.yml` | All above | Time-window join | Low | ⏳ |
+| Correlation | WinRM → PowerShell | _planned (Phase 4)_ | All above | Time-window join | Low | ⏳ |
 
 ---
 
@@ -30,8 +31,8 @@ Maps every authored detection to its MITRE ATT&CK technique, log source, false-p
 
 ## ATT&CK Navigator layer
 
-Generated layer JSON: [`attack-navigator-layer.json`](attack-navigator-layer.json)
-View at: <https://mitre-attack.github.io/attack-navigator/> → Open Existing Layer → Upload from local.
+Layer JSON (`attack-navigator-layer.json`) is generated in Phase 4.
+Once generated, view at: <https://mitre-attack.github.io/attack-navigator/> → Open Existing Layer → Upload from local.
 
 ---
 
