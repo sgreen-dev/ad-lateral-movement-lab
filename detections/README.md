@@ -50,4 +50,4 @@ translation drifts from its Sigma source.
 | `T1021.001_rdp_logon_unusual_source.yml` | Finalized (`test`) |
 | `T1021.006_winrm_execution.yml` | Finalized (`test`) |
 | `T1059.001_powershell_post_winrm.yml` | Finalized (`test`) |
-| `correlation_winrm_to_powershell.yml` | Planned (Phase 4 — correlation backend) |
+| `correlation_winrm_to_powershell.yml` | Finalized (`test`, SPL-only — Kusto has no correlation support) |

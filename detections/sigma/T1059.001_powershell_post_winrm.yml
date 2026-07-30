@@ -1,5 +1,6 @@
 title: Suspicious PowerShell Following WinRM Session
 id: c807ebf8-d01d-4775-8525-2c68092cbb12
+name: susp_powershell_post_winrm   # referenced by correlation_winrm_to_powershell.yml
 status: test
 description: |
   Detects PowerShell script-block execution (EID 4104) carrying suspicious

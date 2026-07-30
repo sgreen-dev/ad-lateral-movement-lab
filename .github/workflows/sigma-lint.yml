@@ -49,7 +49,8 @@ jobs:
         run: |
           python - <<'PY'
           import sys, yaml, pathlib, uuid
-          required = {"title", "id", "status", "description", "logsource", "detection", "level"}
+          base_required = {"title", "id", "status", "description", "logsource", "detection", "level"}
+          corr_required = {"title", "id", "status", "description", "correlation", "level"}
           rc = 0
           for p in pathlib.Path("detections/sigma").rglob("*.yml"):
               doc = yaml.safe_load(p.read_text())
@@ -57,6 +58,9 @@ jobs:
                   print(f"[err] {p}: empty document")
                   rc = 1
                   continue
+              # Correlation rules carry a `correlation:` block instead of
+              # logsource/detection; validate against the appropriate schema.
+              required = corr_required if "correlation" in doc else base_required
               missing = required - set(doc.keys())
               if missing:
                   print(f"[err] {p}: missing keys {missing}")
@@ -96,3 +100,7 @@ jobs:
       # detections/splunk and detections/kql are always in sync with the rules.
       - name: Verify SPL/KQL translations are in sync
         run: python scripts/generate_translations.py --check
+
+      # Keep the ATT&CK Navigator layer derived from rule tags, never stale.
+      - name: Verify ATT&CK Navigator layer is in sync
+        run: python scripts/generate_attack_layer.py --check

@@ -1,5 +1,6 @@
 title: WinRM Remote Execution
 id: 5cf59a80-9f6b-427a-838c-38d7e0d0cdce
+name: winrm_remote_execution   # referenced by correlation_winrm_to_powershell.yml
 status: test
 description: |
   Detects any process spawned by wsmprovhost.exe (the WinRM provider host) on
