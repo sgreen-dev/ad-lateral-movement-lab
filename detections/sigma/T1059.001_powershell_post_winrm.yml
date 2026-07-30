@@ -1,16 +1,23 @@
 title: Suspicious PowerShell Following WinRM Session
-id: 00000000-0000-0000-0000-000000000004     # TODO Phase 4
-status: experimental
+id: c807ebf8-d01d-4775-8525-2c68092cbb12
+status: test
 description: |
-  Detects PowerShell execution with suspicious patterns (encoded command,
-  download cradles, AMSI bypass strings) on a host where a WinRM session
-  was recently established. Pairs with the WinRM rule for kill-chain
-  reconstruction.
+  Detects PowerShell script-block execution (EID 4104) carrying suspicious
+  patterns — encoded commands, download cradles, or AMSI-bypass strings. Pairs
+  with the WinRM rule (T1021.006) so a WinRM-delivered payload and its follow-on
+  PowerShell can be reconstructed as one kill chain.
+
+  Patterns are aligned with the established SigmaHQ PowerShell rules cited below
+  rather than reinvented; this rule narrows them to the encoded/cradle/AMSI
+  subset most relevant to post-exploitation lateral movement.
 references:
   - https://attack.mitre.org/techniques/T1059/001/
-  - https://github.com/SigmaHQ/sigma/tree/master/rules/windows/powershell
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_susp_download_iex.yml
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_amsi_bypass.yml
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_base64_frombase64string.yml
 author: Shurron Green
 date: 2026-04-28
+modified: 2026-07-29
 tags:
   - attack.execution
   - attack.t1059.001
@@ -21,29 +28,25 @@ logsource:
   category: ps_script
 detection:
   encoded_command:
+    # Case-insensitive in Sigma: '-enc' also covers '-EncodedCommand'.
+    # Bare '-e' is intentionally omitted as too false-positive prone.
     ScriptBlockText|contains:
       - 'FromBase64String'
       - '-EncodedCommand'
       - '-enc '
-      - '-e '
   download_cradle:
     ScriptBlockText|contains:
-      - 'IEX (New-Object Net.WebClient).DownloadString'
+      - 'Net.WebClient).DownloadString'
       - 'Invoke-WebRequest'
       - 'IWR '
-      - 'DownloadFile'
+      - '.DownloadFile('
   amsi_bypass:
     ScriptBlockText|contains:
       - 'amsiInitFailed'
       - 'AmsiScanBuffer'
       - '[Ref].Assembly.GetType'
-  condition: 1 of (encoded_command, download_cradle, amsi_bypass)
+  condition: encoded_command or download_cradle or amsi_bypass
 falsepositives:
   - Legitimate admin scripts using base64-encoded payloads
-  - Software installers using IEX
+  - Software installers using IEX / Invoke-WebRequest
 level: high
-
-# === STUB ===
-# TODO Phase 4:
-#   - assign real UUID
-#   - cross-reference SigmaHQ existing rules (don't reinvent — fork)

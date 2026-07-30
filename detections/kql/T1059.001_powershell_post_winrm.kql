@@ -1,0 +1,4 @@
+# GENERATED from detections/sigma/T1059.001_powershell_post_winrm.yml by scripts/generate_translations.py -- do not edit by hand.
+# Rule: Suspicious PowerShell Following WinRM Session
+# Sigma id: c807ebf8-d01d-4775-8525-2c68092cbb12
+(ScriptBlockText contains "FromBase64String" or ScriptBlockText contains "-EncodedCommand" or ScriptBlockText contains "-enc ") or (ScriptBlockText contains "Net.WebClient).DownloadString" or ScriptBlockText contains "Invoke-WebRequest" or ScriptBlockText contains "IWR " or ScriptBlockText contains ".DownloadFile(") or (ScriptBlockText contains "amsiInitFailed" or ScriptBlockText contains "AmsiScanBuffer" or ScriptBlockText contains "[Ref].Assembly.GetType")

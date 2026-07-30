@@ -1,0 +1,4 @@
+# GENERATED from detections/sigma/T1021.002_admin_share_access_anomalous.yml by scripts/generate_translations.py -- do not edit by hand.
+# Rule: Anomalous Admin Share Access
+# Sigma id: d20608f8-dbe5-4b55-9cd1-8d7916d2b4cb
+(EventID == 5145 and (ShareName endswith "\\C$" or ShareName endswith "\\ADMIN$")) and (not(IpAddress =~ "10.0.2.10"))

@@ -1,0 +1,4 @@
+# GENERATED from detections/sigma/T1021.006_winrm_execution.yml by scripts/generate_translations.py -- do not edit by hand.
+# Rule: WinRM Remote Execution
+# Sigma id: 5cf59a80-9f6b-427a-838c-38d7e0d0cdce
+ParentImage endswith "\\wsmprovhost.exe"
