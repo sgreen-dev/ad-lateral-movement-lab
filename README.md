@@ -53,7 +53,7 @@ Full architecture details: [`docs/architecture.md`](docs/architecture.md).
 
 ## Detection coverage
 
-Legend: ✅ done · ⏳ pending. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); CI fails if they drift. **Tested** = live-attack true positive observed in the lab (Phase 3), still pending.
+Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); CI fails if they drift. **Tested** = live-attack true positive observed in the lab (Phase 3), still pending.
 
 | ATT&CK ID | Technique | Sigma rule | SPL | KQL | Tested |
 |---|---|---|---|---|---|
@@ -62,9 +62,11 @@ Legend: ✅ done · ⏳ pending. **SPL** ([`detections/splunk/`](detections/splu
 | T1021.001 | RDP lateral movement | [`T1021.001_rdp_logon_unusual_source.yml`](detections/sigma/T1021.001_rdp_logon_unusual_source.yml) | ✅ | ✅ | ⏳ |
 | T1021.006 | WinRM execution | [`T1021.006_winrm_execution.yml`](detections/sigma/T1021.006_winrm_execution.yml) | ✅ | ✅ | ⏳ |
 | T1059.001 | PowerShell post-WinRM | [`T1059.001_powershell_post_winrm.yml`](detections/sigma/T1059.001_powershell_post_winrm.yml) | ✅ | ✅ | ⏳ |
-| Correlation | WinRM → PowerShell chain | _planned (Phase 4)_ | ⏳ | ⏳ | ⏳ |
+| T1021.006 → T1059.001 | WinRM → PowerShell chain (correlation) | [`correlation_winrm_to_powershell.yml`](detections/sigma/correlation_winrm_to_powershell.yml) | ✅ | n/a¹ | ⏳ |
 
-All five rules are finalized (real UUIDs, `status: test`, validated false-positive profiles) and convert cleanly to SPL and KQL. Remaining Phase 4 work: the WinRM → PowerShell correlation rule and the ATT&CK Navigator layer. **Tested** flips to ✅ in Phase 3 once each rule fires on a live Atomic Red Team run.
+¹ The Kusto/KQL backend does not support Sigma correlation rules, so no KQL is generated for the correlation rule; its two base rules each still have standalone KQL.
+
+All five base rules plus the correlation rule are finalized (real UUIDs, `status: test`, validated false-positive profiles) and convert cleanly to SPL. The ATT&CK Navigator coverage layer is generated from rule tags into [`docs/attack-navigator-layer.json`](docs/attack-navigator-layer.json). **Tested** flips to ✅ in Phase 3 once each rule fires on a live Atomic Red Team run.
 
 ---
 

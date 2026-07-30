@@ -1,10 +1,11 @@
 # Detection Coverage Matrix
 
-> **Status:** rules finalized (Phase 4). All five Sigma rules have real UUIDs,
-> `status: test`, and generated SPL/KQL translations. The **Tested** column
+> **Status:** Phase 4 complete. Five base rules plus a WinRM→PowerShell
+> correlation rule, all with real UUIDs and `status: test`; SPL/KQL generated
+> from source (correlation is SPL-only — Kusto has no correlation support); and
+> an ATT&CK Navigator layer generated from rule tags. The **Tested** column
 > flips from ⏳ once each rule is validated against a live Atomic Red Team run
-> (Phase 3). Remaining Phase 4 items: WinRM→PowerShell correlation rule and the
-> ATT&CK Navigator layer.
+> (Phase 3).
 
 Maps every authored detection to its MITRE ATT&CK technique, log source, false-positive profile, and validation status. This document is the auditable answer to *"what does your lab actually detect, and how do you know?"*
 
@@ -19,7 +20,7 @@ Maps every authored detection to its MITRE ATT&CK technique, log source, false-p
 | T1021.001 | RDP | `T1021.001_rdp_logon_unusual_source.yml` | Security 4624 | LogonType=10, IpAddress | Medium — admins legitimately RDP | ⏳ |
 | T1021.006 | WinRM | `T1021.006_winrm_execution.yml` | Security 4624, Sysmon EID 1 | LogonType=3, ParentImage=wsmprovhost.exe | Low — narrow signal | ⏳ |
 | T1059.001 | PowerShell | `T1059.001_powershell_post_winrm.yml` | Sysmon EID 1, PS 4104 | CommandLine, ScriptBlockText | Medium — legit admin scripts | ⏳ |
-| Correlation | WinRM → PowerShell | _planned (Phase 4)_ | All above | Time-window join | Low | ⏳ |
+| T1021.006 → T1059.001 | WinRM → PowerShell (correlation) | `correlation_winrm_to_powershell.yml` | Sysmon EID 1 + PS 4104 | temporal join, group-by Computer, 5m | Low | ⏳ |
 
 ---
 
@@ -35,8 +36,10 @@ Maps every authored detection to its MITRE ATT&CK technique, log source, false-p
 
 ## ATT&CK Navigator layer
 
-Layer JSON (`attack-navigator-layer.json`) is generated in Phase 4.
-Once generated, view at: <https://mitre-attack.github.io/attack-navigator/> → Open Existing Layer → Upload from local.
+Layer JSON: [`attack-navigator-layer.json`](attack-navigator-layer.json), generated
+from the rules' `attack.*` tags by `scripts/generate_attack_layer.py` (CI verifies
+it stays in sync). Covers T1021.001/.002/.006, T1059.001, T1027.010, T1550.002.
+View at: <https://mitre-attack.github.io/attack-navigator/> → Open Existing Layer → Upload from local.
 
 ---
 

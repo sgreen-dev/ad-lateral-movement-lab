@@ -1,0 +1,36 @@
+title: WinRM Remote Execution Followed by Suspicious PowerShell
+id: 69365273-bf68-4679-a498-faa0913582c4
+status: test
+description: |
+  Correlates a WinRM remote-execution event (a process spawned by
+  wsmprovhost.exe, from T1021.006) with a suspicious PowerShell script block
+  (encoded command / download cradle / AMSI bypass, from T1059.001) on the same
+  host within a 5-minute window. This is the kill-chain signal the incident
+  report reconstructs: lateral movement in (WinRM) immediately followed by
+  hands-on-keyboard tooling (PowerShell).
+
+  The intent is ordered (WinRM *then* PowerShell). It is expressed here as an
+  unordered temporal correlation because the Splunk backend does not support
+  `temporal_ordered`; co-occurrence on the same host inside the window is a
+  close and slightly more permissive approximation. KQL is intentionally not
+  generated for this rule: the Kusto backend does not support correlation rules
+  (each base rule still has its own standalone KQL).
+references:
+  - https://attack.mitre.org/techniques/T1021/006/
+  - https://attack.mitre.org/techniques/T1059/001/
+author: Shurron Green
+date: 2026-07-29
+tags:
+  - attack.lateral_movement
+  - attack.t1021.006
+  - attack.execution
+  - attack.t1059.001
+correlation:
+  type: temporal
+  rules:
+    - winrm_remote_execution        # T1021.006_winrm_execution.yml
+    - susp_powershell_post_winrm    # T1059.001_powershell_post_winrm.yml
+  group-by:
+    - Computer
+  timespan: 5m
+level: high

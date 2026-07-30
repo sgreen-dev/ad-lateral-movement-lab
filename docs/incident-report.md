@@ -71,7 +71,7 @@
 - **Logic summary:** match Windows Security 4624 with LogonType=3 where target host is in scope, correlate with Sysmon EID 1 within 60s where ParentImage = `wsmprovhost.exe`.
 
 ### Correlation rule
-- **Sigma rule:** _planned (Phase 4)_ — WinRM → PowerShell time-window correlation.
+- **Sigma rule:** `detections/sigma/correlation_winrm_to_powershell.yml`
 - **Logic summary:** join WinRM auth event to subsequent PowerShell execution by user/host within a 5-minute window.
 
 ### Why it fired here
