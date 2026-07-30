@@ -53,20 +53,20 @@ Full architecture details: [`docs/architecture.md`](docs/architecture.md).
 
 ## Detection coverage
 
-Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); CI fails if they drift. **Tested** = live-attack true positive observed in the lab (Phase 3), still pending.
+Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); CI fails if they drift. **Tested** = true positive observed in Wazuh during the Phase 3 Atomic Red Team run.
 
 | ATT&CK ID | Technique | Sigma rule | SPL | KQL | Tested |
 |---|---|---|---|---|---|
-| T1021.002 | NTLM network logon (lateral movement) | [`T1021_002_smb_lateral_movement.yml`](detections/sigma/T1021_002_smb_lateral_movement.yml) | ✅ | ✅ | ⏳ |
-| T1021.002 | SMB / admin shares (variant) | [`T1021.002_admin_share_access_anomalous.yml`](detections/sigma/T1021.002_admin_share_access_anomalous.yml) | ✅ | ✅ | ⏳ |
-| T1021.001 | RDP lateral movement | [`T1021.001_rdp_logon_unusual_source.yml`](detections/sigma/T1021.001_rdp_logon_unusual_source.yml) | ✅ | ✅ | ⏳ |
-| T1021.006 | WinRM execution | [`T1021.006_winrm_execution.yml`](detections/sigma/T1021.006_winrm_execution.yml) | ✅ | ✅ | ⏳ |
-| T1059.001 | PowerShell post-WinRM | [`T1059.001_powershell_post_winrm.yml`](detections/sigma/T1059.001_powershell_post_winrm.yml) | ✅ | ✅ | ⏳ |
-| T1021.006 → T1059.001 | WinRM → PowerShell chain (correlation) | [`correlation_winrm_to_powershell.yml`](detections/sigma/correlation_winrm_to_powershell.yml) | ✅ | n/a¹ | ⏳ |
+| T1021.002 | NTLM network logon (lateral movement) | [`T1021_002_smb_lateral_movement.yml`](detections/sigma/T1021_002_smb_lateral_movement.yml) | ✅ | ✅ | ✅ |
+| T1021.002 | SMB / admin shares (variant) | [`T1021.002_admin_share_access_anomalous.yml`](detections/sigma/T1021.002_admin_share_access_anomalous.yml) | ✅ | ✅ | ✅ |
+| T1021.001 | RDP lateral movement | [`T1021.001_rdp_logon_unusual_source.yml`](detections/sigma/T1021.001_rdp_logon_unusual_source.yml) | ✅ | ✅ | ✅ |
+| T1021.006 | WinRM execution | [`T1021.006_winrm_execution.yml`](detections/sigma/T1021.006_winrm_execution.yml) | ✅ | ✅ | ✅ |
+| T1059.001 | PowerShell post-WinRM | [`T1059.001_powershell_post_winrm.yml`](detections/sigma/T1059.001_powershell_post_winrm.yml) | ✅ | ✅ | ✅ |
+| T1021.006 → T1059.001 | WinRM → PowerShell chain (correlation) | [`correlation_winrm_to_powershell.yml`](detections/sigma/correlation_winrm_to_powershell.yml) | ✅ | n/a¹ | ✅ |
 
 ¹ The Kusto/KQL backend does not support Sigma correlation rules, so no KQL is generated for the correlation rule; its two base rules each still have standalone KQL.
 
-All five base rules plus the correlation rule are finalized (real UUIDs, `status: test`, validated false-positive profiles) and convert cleanly to SPL. The ATT&CK Navigator coverage layer is generated from rule tags into [`docs/attack-navigator-layer.json`](docs/attack-navigator-layer.json). **Tested** flips to ✅ in Phase 3 once each rule fires on a live Atomic Red Team run.
+All five base rules plus the correlation rule are finalized (real UUIDs, `status: test`, validated false-positive profiles), convert cleanly to SPL, and were each confirmed firing as true positives during the Phase 3 Atomic Red Team run. The ATT&CK Navigator coverage layer is generated from rule tags into [`docs/attack-navigator-layer.json`](docs/attack-navigator-layer.json).
 
 ---
 
@@ -114,12 +114,12 @@ This lab costs **~$165/month** if left running 24/7 and **~$5–8 per active wee
 
 | Phase | Status |
 |---|---|
-| 1 — Provision | 🚧 In progress |
-| 2 — Instrument | ⏳ Pending |
-| 3 — Attack | ⏳ Pending |
-| 4 — Detect | ⏳ Pending |
-| 5 — Respond | ⏳ Pending |
-| 6 — Document | ⏳ Pending |
+| 1 — Provision | ✅ Complete |
+| 2 — Instrument | ✅ Complete |
+| 3 — Attack | ✅ Complete |
+| 4 — Detect | ✅ Complete |
+| 5 — Respond | ⏳ Pending — IOC parser + NIST 800-61 incident report |
+| 6 — Document | 🚧 In progress — architecture, coverage matrix, and runbook drafted |
 
 ---
 
