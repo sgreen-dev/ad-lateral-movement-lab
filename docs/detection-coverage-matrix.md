@@ -1,6 +1,10 @@
 # Detection Coverage Matrix
 
-> **Status:** skeleton — populated in Phase 4 alongside rule authoring.
+> **Status:** rules finalized (Phase 4). All five Sigma rules have real UUIDs,
+> `status: test`, and generated SPL/KQL translations. The **Tested** column
+> flips from ⏳ once each rule is validated against a live Atomic Red Team run
+> (Phase 3). Remaining Phase 4 items: WinRM→PowerShell correlation rule and the
+> ATT&CK Navigator layer.
 
 Maps every authored detection to its MITRE ATT&CK technique, log source, false-positive profile, and validation status. This document is the auditable answer to *"what does your lab actually detect, and how do you know?"*
 

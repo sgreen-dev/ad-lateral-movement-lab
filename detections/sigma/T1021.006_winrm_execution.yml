@@ -1,16 +1,26 @@
 title: WinRM Remote Execution
-id: 00000000-0000-0000-0000-000000000003     # TODO Phase 4
-status: experimental
+id: 5cf59a80-9f6b-427a-838c-38d7e0d0cdce
+status: test
 description: |
-  Detects WinRM-based remote execution by joining a network logon (4624
-  LogonType=3) with a subsequent process creation under wsmprovhost.exe
-  (the WinRM provider host) on the destination. This is high-fidelity for
-  T1021.006 and rarely triggers outside genuine remoting.
+  Detects any process spawned by wsmprovhost.exe (the WinRM provider host) on
+  the destination, which is the on-host footprint of WinRM/PowerShell-remoting
+  execution. High-fidelity for T1021.006: wsmprovhost.exe only exists to host
+  remoting sessions, so child processes rarely appear outside genuine remoting.
+
+  Design decision: authored against the vendor-neutral `process_creation`
+  category rather than as two variants. The Sigma sysmon pipeline maps this to
+  Sysmon EID 1, and the generic-windows pipeline maps it to Security 4688 — a
+  single rule covers both telemetry sources without duplication. ParentImage is
+  the correct field for both (validated against
+  test_data/sample_sysmon_eid1_powershell.json).
+
+  This is the rule the incident report walks through end-to-end in Phase 5.
 references:
   - https://attack.mitre.org/techniques/T1021/006/
   - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.006/T1021.006.md
 author: Shurron Green
 date: 2026-04-28
+modified: 2026-07-29
 tags:
   - attack.lateral_movement
   - attack.t1021.006
@@ -26,10 +36,3 @@ falsepositives:
   - Authorized administrators using PowerShell remoting
   - Configuration management tools (Ansible, DSC) — allow-list these source hosts
 level: high
-
-# === STUB ===
-# TODO Phase 4:
-#   - assign real UUID
-#   - validate ParentImage field name (Sysmon EID 1) vs Security 4688
-#   - decide whether to author two variants (one Sysmon, one 4688)
-#   - this is the rule the IR report walks through end-to-end in Phase 5

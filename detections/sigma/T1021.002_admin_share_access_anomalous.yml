@@ -1,15 +1,22 @@
 title: Anomalous Admin Share Access
-id: 00000000-0000-0000-0000-000000000002     # TODO Phase 4
-status: experimental
+id: d20608f8-dbe5-4b55-9cd1-8d7916d2b4cb
+status: test
 description: |
-  Detects access to administrative shares (C$, ADMIN$, IPC$) from a host that
-  is not an approved backup or management server. Correlates Windows
-  Security Event 5145 with Sysmon Event ID 3 (network connection on TCP/445).
+  Detects write/exec-capable access to administrative shares (C$, ADMIN$) via
+  Windows Security Event 5145 (detailed file share) from a host that is not an
+  approved backup or management server. This is the file-share footprint of
+  SMB lateral movement (psexec/smbexec-style tooling drops a payload to ADMIN$
+  or C$). IPC$ is intentionally excluded here: it is used by nearly all benign
+  RPC/named-pipe traffic and would drown the signal.
+
+  Pairs with T1021_002_smb_lateral_movement.yml (the NTLM auth side): that rule
+  catches the logon, this one catches the share touch.
 references:
   - https://attack.mitre.org/techniques/T1021/002/
   - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.002/T1021.002.md
 author: Shurron Green
 date: 2026-04-28
+modified: 2026-07-29
 tags:
   - attack.lateral_movement
   - attack.t1021.002
@@ -24,16 +31,10 @@ detection:
       - '\ADMIN$'
   filter_known_management_hosts:
     IpAddress:
-      - '10.0.2.10'  # placeholder — DC for legitimate replication
+      - '10.0.2.10'  # DC01 — legitimate AD replication / SYSVOL
   condition: selection and not filter_known_management_hosts
 falsepositives:
-  - Domain controller replication
-  - Backup/management software (document and allow-list)
-  - Software deployment tools (SCCM, etc.)
+  - Domain controller replication (DC01 allow-listed above)
+  - Backup/management software (document and allow-list its source IP)
+  - Software deployment tools (SCCM, PDQ, etc.)
 level: medium
-
-# === STUB ===
-# TODO Phase 4:
-#   - assign real UUID
-#   - extend with Sysmon EID 3 correlation (separate rule, then aggregator)
-#   - validate against test fixtures

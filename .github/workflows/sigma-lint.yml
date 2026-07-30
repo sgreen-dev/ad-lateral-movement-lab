@@ -88,20 +88,11 @@ jobs:
           python-version: '3.12'
       - name: Install sigma tooling
         run: |
-          pip install pysigma pysigma-backend-splunk pysigma-pipeline-sysmon pysigma-backend-kusto sigma-cli
+          pip install pysigma pysigma-backend-splunk pysigma-pipeline-sysmon pysigma-backend-kusto sigma-cli pyyaml
 
-      - name: Convert to SPL (smoke check)
-        continue-on-error: true   # placeholder rules may not convert cleanly; flip to false in Phase 4
-        run: |
-          for f in detections/sigma/*.yml; do
-            echo "=== $f -> SPL ==="
-            sigma convert -t splunk -p sysmon "$f" || echo "(conversion failed — expected for stubs)"
-          done
-
-      - name: Convert to KQL (smoke check)
-        continue-on-error: true
-        run: |
-          for f in detections/sigma/*.yml; do
-            echo "=== $f -> KQL ==="
-            sigma convert -t microsoft365defender "$f" || echo "(conversion failed — expected for stubs)"
-          done
+      # Regenerate SPL/KQL from the Sigma source and fail if the committed
+      # translations are stale. This both proves every rule converts cleanly
+      # (a hard gate — no more continue-on-error) and enforces that
+      # detections/splunk and detections/kql are always in sync with the rules.
+      - name: Verify SPL/KQL translations are in sync
+        run: python scripts/generate_translations.py --check
