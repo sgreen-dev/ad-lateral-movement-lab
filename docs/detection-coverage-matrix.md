@@ -1,11 +1,11 @@
 # Detection Coverage Matrix
 
-> **Status:** Phase 4 complete. Five base rules plus a WinRM→PowerShell
+> **Status:** Phases 3–4 complete. Five base rules plus a WinRM→PowerShell
 > correlation rule, all with real UUIDs and `status: test`; SPL/KQL generated
 > from source (correlation is SPL-only — Kusto has no correlation support); and
-> an ATT&CK Navigator layer generated from rule tags. The **Tested** column
-> flips from ⏳ once each rule is validated against a live Atomic Red Team run
-> (Phase 3).
+> an ATT&CK Navigator layer generated from rule tags. Every rule was confirmed
+> firing as a true positive in Wazuh during the Phase 3 Atomic Red Team run
+> (**Tested** = ✅).
 
 Maps every authored detection to its MITRE ATT&CK technique, log source, false-positive profile, and validation status. This document is the auditable answer to *"what does your lab actually detect, and how do you know?"*
 
@@ -15,12 +15,12 @@ Maps every authored detection to its MITRE ATT&CK technique, log source, false-p
 
 | ATT&CK ID | Technique | Sigma rule | Log source(s) | Key fields | False-positive risk | Tested |
 |---|---|---|---|---|---|---|
-| T1021.002 | NTLM network logon | `T1021_002_smb_lateral_movement.yml` | Security 4624 | LogonType=3, AuthenticationPackageName=NTLM, TargetUserName | Medium — NTLM fallback / scanners | ⏳ |
-| T1021.002 | SMB / Admin shares (variant) | `T1021.002_admin_share_access_anomalous.yml` | Security 5140/5145, Sysmon EID 3 | ShareName, RelativeTargetName | High — backup software | ⏳ |
-| T1021.001 | RDP | `T1021.001_rdp_logon_unusual_source.yml` | Security 4624 | LogonType=10, IpAddress | Medium — admins legitimately RDP | ⏳ |
-| T1021.006 | WinRM | `T1021.006_winrm_execution.yml` | Security 4624, Sysmon EID 1 | LogonType=3, ParentImage=wsmprovhost.exe | Low — narrow signal | ⏳ |
-| T1059.001 | PowerShell | `T1059.001_powershell_post_winrm.yml` | Sysmon EID 1, PS 4104 | CommandLine, ScriptBlockText | Medium — legit admin scripts | ⏳ |
-| T1021.006 → T1059.001 | WinRM → PowerShell (correlation) | `correlation_winrm_to_powershell.yml` | Sysmon EID 1 + PS 4104 | temporal join, group-by Computer, 5m | Low | ⏳ |
+| T1021.002 | NTLM network logon | `T1021_002_smb_lateral_movement.yml` | Security 4624 | LogonType=3, AuthenticationPackageName=NTLM, TargetUserName | Medium — NTLM fallback / scanners | ✅ |
+| T1021.002 | SMB / Admin shares (variant) | `T1021.002_admin_share_access_anomalous.yml` | Security 5140/5145, Sysmon EID 3 | ShareName, RelativeTargetName | High — backup software | ✅ |
+| T1021.001 | RDP | `T1021.001_rdp_logon_unusual_source.yml` | Security 4624 | LogonType=10, IpAddress | Medium — admins legitimately RDP | ✅ |
+| T1021.006 | WinRM | `T1021.006_winrm_execution.yml` | Security 4624, Sysmon EID 1 | LogonType=3, ParentImage=wsmprovhost.exe | Low — narrow signal | ✅ |
+| T1059.001 | PowerShell | `T1059.001_powershell_post_winrm.yml` | Sysmon EID 1, PS 4104 | CommandLine, ScriptBlockText | Medium — legit admin scripts | ✅ |
+| T1021.006 → T1059.001 | WinRM → PowerShell (correlation) | `correlation_winrm_to_powershell.yml` | Sysmon EID 1 + PS 4104 | temporal join, group-by Computer, 5m | Low | ✅ |
 
 ---
 
