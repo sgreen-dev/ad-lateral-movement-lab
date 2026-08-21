@@ -1,0 +1,151 @@
+<!--
+  =============================================================================
+  local_rules.xml — native Wazuh ports of the lab's Sigma detections
+  =============================================================================
+  Install: copy to /var/ossec/etc/rules/local_rules.xml on the Wazuh MANAGER,
+           then `sudo systemctl restart wazuh-manager`. See README.md.
+
+  These are hand-ported from detections/sigma/*.yml (Sigma is the source of
+  truth). Sigma has no official Wazuh backend, so the port is manual; each rule
+  cites its Sigma source and preserves the same selection/filter logic.
+
+  Field names follow the Wazuh `windows_eventchannel` decoder convention:
+  win.system.* (envelope) and win.eventdata.* (payload, first letter
+  lower-cased). VERIFY these against a real decoded event on your build before
+  trusting them (Discover → expand event → JSON tab) — see README §"Field names".
+
+  Base-condition choice:
+    - Sysmon rule layers on the built-in Sysmon ruleset via <if_group>sysmon_event1</if_group>.
+    - Security / PowerShell rules match the decoder directly via
+      <decoded_as>windows_eventchannel</decoded_as> + channel + eventID, so they
+      do not depend on specific built-in rule IDs (which shift across versions).
+
+  Rule IDs 100210–100260 are inside the user range (100000–120000).
+  =============================================================================
+-->
+<group name="ad_lateral_movement,">
+
+  <!-- ==========================================================================
+       100210 — T1021.006 WinRM remote execution
+       Sigma: detections/sigma/T1021.006_winrm_execution.yml
+       Logic: any process whose parent is wsmprovhost.exe (WinRM provider host).
+       Atomic: WinRM from DC01 (atomic-test-plan.md → T1021.006-1).
+       ========================================================================== -->
+  <rule id="100210" level="12">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\wsmprovhost\.exe$</field>
+    <description>Lateral Movement (T1021.006): WinRM remote execution — process spawned by wsmprovhost.exe on $(win.system.computer)</description>
+    <mitre>
+      <id>T1021.006</id>
+    </mitre>
+    <group>lateral_movement,winrm_remote_execution,</group>
+  </rule>
+
+  <!-- ==========================================================================
+       100220 — T1021.002 / T1550.002 NTLM network logon by a user account
+       Sigma: detections/sigma/T1021_002_smb_lateral_movement.yml
+       Logic: 4624 + LogonType 3 + NTLM, excluding machine accounts (…$) and
+              ANONYMOUS LOGON (one negated field covers both exclusions).
+       Atomic: NTLM network logon from Kali (NetExec / impacket psexec).
+       ========================================================================== -->
+  <rule id="100220" level="10">
+    <decoded_as>windows_eventchannel</decoded_as>
+    <field name="win.system.channel" type="pcre2">^Security$</field>
+    <field name="win.system.eventID" type="pcre2">^4624$</field>
+    <field name="win.eventdata.logonType" type="pcre2">^3$</field>
+    <field name="win.eventdata.authenticationPackageName" type="pcre2">(?i)^NTLM$</field>
+    <field name="win.eventdata.targetUserName" negate="yes" type="pcre2">(?i)(\$$|^ANONYMOUS LOGON$)</field>
+    <description>Lateral Movement (T1021.002): NTLM network logon (4624/Type 3) by user account $(win.eventdata.targetUserName) from $(win.eventdata.ipAddress) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1021.002</id>
+      <id>T1550.002</id>
+    </mitre>
+    <group>lateral_movement,ntlm_network_logon,</group>
+  </rule>
+
+  <!-- ==========================================================================
+       100230 — T1021.002 Anomalous admin-share access
+       Sigma: detections/sigma/T1021.002_admin_share_access_anomalous.yml
+       Logic: 5145 touching \C$ or \ADMIN$ (IPC$ excluded by selection), from a
+              source IP that is NOT the DC (10.0.2.10 allow-listed).
+       Atomic: net use \\DC01\C$ then copy (atomic-test-plan.md → T1021.002-1).
+       ========================================================================== -->
+  <rule id="100230" level="10">
+    <decoded_as>windows_eventchannel</decoded_as>
+    <field name="win.system.channel" type="pcre2">^Security$</field>
+    <field name="win.system.eventID" type="pcre2">^5145$</field>
+    <field name="win.eventdata.shareName" type="pcre2">(?i)\\(C\$|ADMIN\$)$</field>
+    <field name="win.eventdata.ipAddress" negate="yes" type="pcre2">^10\.0\.2\.10$</field>
+    <description>Lateral Movement (T1021.002): admin-share access to $(win.eventdata.shareName) from $(win.eventdata.ipAddress) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1021.002</id>
+    </mitre>
+    <group>lateral_movement,admin_share_access,</group>
+  </rule>
+
+  <!-- ==========================================================================
+       100240 — T1021.001 RDP logon from an unusual source
+       Sigma: detections/sigma/T1021.001_rdp_logon_unusual_source.yml
+       Logic: 4624 + LogonType 10, excluding local-console sources (-, 127.0.0.1,
+              ::1). In this lab any Type-10 network source (e.g. Kali 10.0.1.10)
+              fires; production adds an admin-jump-host allow-list here.
+       Atomic: xfreerdp from Kali (atomic-test-plan.md → T1021.001-1).
+       ========================================================================== -->
+  <rule id="100240" level="10">
+    <decoded_as>windows_eventchannel</decoded_as>
+    <field name="win.system.channel" type="pcre2">^Security$</field>
+    <field name="win.system.eventID" type="pcre2">^4624$</field>
+    <field name="win.eventdata.logonType" type="pcre2">^10$</field>
+    <field name="win.eventdata.ipAddress" negate="yes" type="pcre2">^(-|127\.0\.0\.1|::1)$</field>
+    <description>Lateral Movement (T1021.001): RDP logon (4624/Type 10) from $(win.eventdata.ipAddress) as $(win.eventdata.targetUserName) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1021.001</id>
+    </mitre>
+    <group>lateral_movement,rdp_unusual_source,</group>
+  </rule>
+
+  <!-- ==========================================================================
+       100250 — T1059.001 Suspicious PowerShell (post-WinRM)
+       Sigma: detections/sigma/T1059.001_powershell_post_winrm.yml
+       Logic: 4104 ScriptBlockText containing an encoded-command, download-cradle,
+              or AMSI-bypass indicator (OR across all three Sigma selections).
+       Atomic: encoded PowerShell via the WinRM session (atomic-test-plan.md → T1059.001).
+       ========================================================================== -->
+  <rule id="100250" level="12">
+    <decoded_as>windows_eventchannel</decoded_as>
+    <field name="win.system.channel" type="pcre2">(?i)PowerShell/Operational$</field>
+    <field name="win.system.eventID" type="pcre2">^4104$</field>
+    <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)(FromBase64String|-EncodedCommand|-enc\s|Net\.WebClient\)\.DownloadString|Invoke-WebRequest|\bIWR\s|\.DownloadFile\(|amsiInitFailed|AmsiScanBuffer|\[Ref\]\.Assembly\.GetType)</field>
+    <description>Execution (T1059.001): suspicious PowerShell script block (encoded / download cradle / AMSI bypass) on $(win.system.computer)</description>
+    <mitre>
+      <id>T1059.001</id>
+      <id>T1027.010</id>
+    </mitre>
+    <group>execution,susp_powershell_post_winrm,</group>
+  </rule>
+
+  <!-- ==========================================================================
+       100260 — Correlation: WinRM (100210) THEN suspicious PowerShell (100250)
+                 on the same host within 5 minutes.
+       Sigma: detections/sigma/correlation_winrm_to_powershell.yml
+       Wazuh composite: current event is the PowerShell rule (<if_sid>100250</if_sid>),
+                        and the WinRM rule matched within the window
+                        (<if_matched_sid>100210</if_matched_sid>) on the same host
+                        (<same_field>win.system.computer</same_field>).
+       This is the kill-chain signal the incident report reconstructs.
+       Temporal firing is validated live (a fixture cannot exercise timing) —
+       see README §"Validate the correlation rule".
+       ========================================================================== -->
+  <rule id="100260" level="14" timeframe="300">
+    <if_sid>100250</if_sid>
+    <if_matched_sid>100210</if_matched_sid>
+    <same_field>win.system.computer</same_field>
+    <description>Kill chain (T1021.006 → T1059.001): WinRM remote execution followed by suspicious PowerShell on $(win.system.computer) within 5 minutes</description>
+    <mitre>
+      <id>T1021.006</id>
+      <id>T1059.001</id>
+    </mitre>
+    <group>lateral_movement,execution,winrm_to_powershell_chain,</group>
+  </rule>
+
+</group>

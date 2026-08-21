@@ -11,7 +11,7 @@ A reproducible, Terraform-deployed Active Directory environment in AWS for emula
 
 | Path | What it is |
 |---|---|
-| [`docs/`](docs/) | Incident report, architecture deep-dive, detection coverage matrix, analyst runbook |
+| [`docs/`](docs/) | **[Operator guide](docs/operator-guide.md)** (run it yourself), incident report, architecture deep-dive, detection coverage matrix, analyst runbook |
 | [`terraform/`](terraform/) | IaC for the full lab — VPC, AD hosts, Wazuh SIEM, Kali attacker, cost controls |
 | [`detections/`](detections/) | Sigma rules + SPL/KQL translations + test fixtures |
 | [`scripts/`](scripts/) | Windows bootstrap (Sysmon, audit policy, ART) + Python IOC parser |
@@ -73,6 +73,11 @@ All five base rules plus the correlation rule are finalized (real UUIDs, `status
 ## Reproduce this lab
 
 **Prerequisites:** AWS account with admin, Terraform ≥ 1.6, AWS CLI, ~$10 spend budget for a weekend.
+
+> **Running it hands-on?** The [**Operator guide**](docs/operator-guide.md) is the full
+> copy-paste runbook — start the lab, check every server's health, run any Atomic Red Team test,
+> capture its telemetry, and build the matching Wazuh detection. The quick-start below is the
+> 60-second version.
 
 ```bash
 # 1. Stand up the lab

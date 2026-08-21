@@ -1,0 +1,45 @@
+name: Wazuh rules — validate
+
+# Detection-as-code gate for the native Wazuh port (detections/wazuh/).
+# Proves each rule matches its positive fixture and rejects its negative
+# (true positive + true negative), and that the correlation rule is wired.
+# Stdlib-only — no pip install, runs in seconds.
+
+on:
+  push:
+    paths:
+      - 'detections/wazuh/**'
+      - '.github/workflows/wazuh-rules.yml'
+  pull_request:
+    paths:
+      - 'detections/wazuh/**'
+      - '.github/workflows/wazuh-rules.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Wazuh rules against fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: local_rules.xml is well-formed
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          rules = ET.parse("detections/wazuh/local_rules.xml").findall(".//rule")
+          ids = [r.get("id") for r in rules]
+          assert len(ids) == len(set(ids)), f"duplicate rule ids: {ids}"
+          for i in ids:
+              assert 100000 <= int(i) <= 120000, f"rule {i} outside user range 100000-120000"
+          print(f"[ok] {len(ids)} rules, unique, in user range: {ids}")
+          PY
+
+      - name: Rule logic — true positive / true negative per rule
+        run: python detections/wazuh/test_wazuh_rules.py

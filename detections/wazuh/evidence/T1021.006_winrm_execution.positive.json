@@ -1,0 +1,20 @@
+{
+  "_comment": "T1021.006 POSITIVE. Sysmon EID 1 on WIN01: powershell.exe spawned by wsmprovhost.exe (a WinRM remoting session). Wazuh rule 100210 MUST fire. Shape mirrors a decoded Wazuh alert (data.win.*), i.e. what you see in Discover.",
+  "_expect": { "rule_id": "100210", "match": true },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Sysmon",
+        "channel": "Microsoft-Windows-Sysmon/Operational",
+        "eventID": "1",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "parentImage": "C:\\Windows\\System32\\wsmprovhost.exe",
+        "commandLine": "powershell.exe -NoProfile -EncodedCommand SQBFAFgA",
+        "user": "LAB\\svc_backup"
+      }
+    }
+  }
+}

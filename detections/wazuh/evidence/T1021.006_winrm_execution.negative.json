@@ -1,0 +1,20 @@
+{
+  "_comment": "T1021.006 NEGATIVE (true negative). Sysmon EID 1: powershell.exe spawned by explorer.exe — a normal interactive launch, NOT a WinRM session. Wazuh rule 100210 must NOT fire (parentImage is not wsmprovhost.exe).",
+  "_expect": { "rule_id": "100210", "match": false },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Sysmon",
+        "channel": "Microsoft-Windows-Sysmon/Operational",
+        "eventID": "1",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "parentImage": "C:\\Windows\\explorer.exe",
+        "commandLine": "powershell.exe -NoProfile",
+        "user": "LAB\\bob"
+      }
+    }
+  }
+}

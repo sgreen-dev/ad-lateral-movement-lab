@@ -1,0 +1,22 @@
+{
+  "_comment": "T1021.002 NEGATIVE (true negative). Security 4624, LogonType 3, NTLM, but the account is a MACHINE account (WIN01$). The Sigma rule explicitly excludes accounts ending in '$' (routine computer-account NTLM). Wazuh rule 100220 must NOT fire (negated targetUserName).",
+  "_expect": { "rule_id": "100220", "match": false },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "4624",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "logonType": "3",
+        "authenticationPackageName": "NTLM",
+        "targetUserName": "WIN01$",
+        "targetDomainName": "LAB",
+        "ipAddress": "10.0.2.10",
+        "workstationName": "DC01"
+      }
+    }
+  }
+}

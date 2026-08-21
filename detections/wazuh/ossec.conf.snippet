@@ -1,0 +1,42 @@
+<!--
+  =============================================================================
+  ossec.conf.snippet — reference config for the lab's Wazuh pipeline
+  =============================================================================
+  The custom RULES (local_rules.xml) auto-load from /var/ossec/etc/rules/ and
+  need NO ossec.conf change. This snippet documents the two config touchpoints
+  that make the rules have something to match, in one place:
+
+    A) AGENT side  — forward the Sysmon + PowerShell channels (Security is
+       forwarded by default). The Windows bootstrap already writes this into
+       C:\Program Files (x86)\ossec-agent\ossec.conf; shown here for reference.
+
+    B) MANAGER side — (optional) archive EVERY event so telemetry that doesn't
+       match a rule is still queryable in wazuh-archives-*. See operator-guide §4.
+  =============================================================================
+-->
+
+<!-- ============================ A) AGENT (WIN01 / DC01) ====================== -->
+<!-- Goes inside <ossec_config> in the Windows agent's ossec.conf.
+     The Security channel is collected by default; these two add the telemetry
+     rules 100210 (Sysmon EID 1) and 100250 (PowerShell 4104) depend on.        -->
+<localfile>
+  <location>Microsoft-Windows-Sysmon/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+<localfile>
+  <location>Microsoft-Windows-PowerShell/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>
+
+<!-- ============================ B) MANAGER (Wazuh host) ===================== -->
+<!-- Inside <ossec_config><global> on the manager. Turns on full archiving so
+     benign atomics (no rule match) are still captured in wazuh-archives-*.
+     Cost: roughly doubles index storage — disable when done (see operator-guide §4).
+     After changing: sudo systemctl restart wazuh-manager && sudo systemctl restart filebeat
+     (and enable "archives" in /etc/filebeat/modules.d/wazuh.yml).               -->
+<!--
+<global>
+  <logall>yes</logall>
+  <logall_json>yes</logall_json>
+</global>
+-->
