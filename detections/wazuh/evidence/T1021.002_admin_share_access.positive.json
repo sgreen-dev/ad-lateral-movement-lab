@@ -1,0 +1,21 @@
+{
+  "_comment": "T1021.002 POSITIVE. Security 5145 (detailed file share): write access to \\\\*\\C$ from Kali (10.0.1.10) — the file-share footprint of SMB lateral movement (psexec/smbexec drop to C$/ADMIN$). Wazuh rule 100230 MUST fire.",
+  "_expect": { "rule_id": "100230", "match": true },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "5145",
+        "computer": "DC01.lab.local"
+      },
+      "eventdata": {
+        "shareName": "\\\\*\\C$",
+        "relativeTargetName": "Users\\Public\\notes.txt",
+        "ipAddress": "10.0.1.10",
+        "subjectUserName": "bob",
+        "accessMask": "0x2"
+      }
+    }
+  }
+}

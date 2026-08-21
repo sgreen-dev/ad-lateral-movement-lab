@@ -1,0 +1,19 @@
+{
+  "_comment": "T1059.001 NEGATIVE (true negative). PowerShell 4104 carrying a benign, everyday admin one-liner — no encoded command, download cradle, or AMSI-bypass indicator. Wazuh rule 100250 must NOT fire. This is the false-positive-control case.",
+  "_expect": { "rule_id": "100250", "match": false },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-PowerShell",
+        "channel": "Microsoft-Windows-PowerShell/Operational",
+        "eventID": "4104",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "scriptBlockText": "Get-Process | Sort-Object CPU -Descending | Select-Object -First 5",
+        "scriptBlockId": "a1b2c3d4-0000-0000-0000-000000000002",
+        "path": ""
+      }
+    }
+  }
+}

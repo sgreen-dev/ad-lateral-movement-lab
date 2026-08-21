@@ -1,0 +1,21 @@
+{
+  "_comment": "T1021.002 NEGATIVE (true negative). Security 5145 touching \\\\*\\C$ but the source IP is the DC (10.0.2.10), which is allow-listed for legitimate AD replication / SYSVOL. Wazuh rule 100230 must NOT fire (negated ipAddress).",
+  "_expect": { "rule_id": "100230", "match": false },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "5145",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "shareName": "\\\\*\\C$",
+        "relativeTargetName": "Windows\\SYSVOL\\sysvol",
+        "ipAddress": "10.0.2.10",
+        "subjectUserName": "DC01$",
+        "accessMask": "0x1"
+      }
+    }
+  }
+}

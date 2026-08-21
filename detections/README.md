@@ -9,6 +9,7 @@ Sigma rules + per-SIEM translations + test fixtures.
 | [`sigma/`](sigma/) | Authoritative rules in Sigma format |
 | [`splunk/`](splunk/) | SPL translations (one .conf per rule) |
 | [`kql/`](kql/) | KQL translations for Sentinel/Defender |
+| [`wazuh/`](wazuh/) | **Native Wazuh rules** (the port that runs in the lab's SIEM) + fixtures + offline validator |
 | [`test_data/`](test_data/) | Sample events used to validate rules |
 
 ## Authoring conventions

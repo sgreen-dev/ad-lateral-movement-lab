@@ -1,0 +1,22 @@
+{
+  "_comment": "T1021.002 / T1550.002 POSITIVE. Security 4624, LogonType 3, NTLM, by user account 'bob' from Kali (10.0.1.10). Uncommon in a Kerberos-default AD domain -> lateral movement with stolen creds. Wazuh rule 100220 MUST fire.",
+  "_expect": { "rule_id": "100220", "match": true },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "4624",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "logonType": "3",
+        "authenticationPackageName": "NTLM",
+        "targetUserName": "bob",
+        "targetDomainName": "LAB",
+        "ipAddress": "10.0.1.10",
+        "workstationName": "KALI"
+      }
+    }
+  }
+}

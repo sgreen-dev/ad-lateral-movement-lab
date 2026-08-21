@@ -1,0 +1,22 @@
+{
+  "_comment": "T1021.001 NEGATIVE (true negative). Security 4624, LogonType 10, but IpAddress is '-' (a local console session, no network source). The Sigma rule excludes local-console sources (-, 127.0.0.1, ::1). Wazuh rule 100240 must NOT fire (negated ipAddress).",
+  "_expect": { "rule_id": "100240", "match": false },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "4624",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "logonType": "10",
+        "authenticationPackageName": "Negotiate",
+        "targetUserName": "Administrator",
+        "targetDomainName": "LAB",
+        "ipAddress": "-",
+        "workstationName": "WIN01"
+      }
+    }
+  }
+}

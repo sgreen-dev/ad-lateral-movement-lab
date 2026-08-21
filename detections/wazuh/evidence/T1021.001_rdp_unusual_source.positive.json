@@ -1,0 +1,22 @@
+{
+  "_comment": "T1021.001 POSITIVE. Security 4624, LogonType 10 (RemoteInteractive / RDP) from Kali (10.0.1.10) as 'bob'. No legitimate RDP jump host exists in this lab, so any Type-10 network source fires. Wazuh rule 100240 MUST fire.",
+  "_expect": { "rule_id": "100240", "match": true },
+  "data": {
+    "win": {
+      "system": {
+        "providerName": "Microsoft-Windows-Security-Auditing",
+        "channel": "Security",
+        "eventID": "4624",
+        "computer": "WIN01.lab.local"
+      },
+      "eventdata": {
+        "logonType": "10",
+        "authenticationPackageName": "Negotiate",
+        "targetUserName": "bob",
+        "targetDomainName": "LAB",
+        "ipAddress": "10.0.1.10",
+        "workstationName": "KALI"
+      }
+    }
+  }
+}
