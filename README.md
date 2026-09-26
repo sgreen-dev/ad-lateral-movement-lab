@@ -75,7 +75,7 @@ All five base rules plus the correlation rule are finalized (real UUIDs, documen
 
 ## Reproduce this lab
 
-**Prerequisites:** AWS account with admin, Terraform ≥ 1.6, AWS CLI, ~$10 spend budget for a weekend.
+**Prerequisites:** dedicated sandbox AWS account with admin (this lab authenticates via IAM Identity Center/SSO profile `lab-sso` — no static keys), Terraform ≥ 1.6, AWS CLI v2, ~$10 spend budget for a weekend.
 
 > **Running it hands-on?** The [**Operator guide**](docs/operator-guide.md) is the full
 > copy-paste runbook — start the lab, check every server's health, run any Atomic Red Team test,
@@ -83,6 +83,11 @@ All five base rules plus the correlation rule are finalized (real UUIDs, documen
 > 60-second version.
 
 ```bash
+# 0. Sign in (SSO) and confirm you're in the lab account
+export AWS_PROFILE=lab-sso          # PowerShell: $env:AWS_PROFILE = 'lab-sso'
+aws sso login --sso-session lab
+aws sts get-caller-identity         # Account must be the lab sandbox account
+
 # 1. Stand up the lab
 cd terraform
 terraform init
@@ -96,9 +101,8 @@ terraform apply -var="my_ip=$(curl -s ifconfig.me)/32"
 ssh -i lab-key.pem ubuntu@$(terraform output -raw kali_public_ip)
 # Then follow attack-emulation/atomic-test-plan.md
 
-# 4. Investigate the alerts in Wazuh
-echo "https://$(terraform output -raw wazuh_private_ip):443"
-# Tunnel via SSM port forwarding: terraform output -raw wazuh_dashboard_command
+# 4. Investigate the alerts in Wazuh (private IP only — reach it through an SSM tunnel)
+terraform output -raw wazuh_dashboard_command   # run the printed command, then browse https://localhost:8443
 # (full steps: docs/operator-guide.md §4)
 
 # 5. Tear down (do this every session — see cost section)

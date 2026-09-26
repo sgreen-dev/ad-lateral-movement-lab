@@ -23,10 +23,10 @@ terraform/
 
 ### 1. Prerequisites
 
-- AWS account with admin (sandbox/personal — not a work account)
-- AWS CLI configured (`aws configure`)
+- Dedicated sandbox AWS account (not a work account). The account ID lives in the repo variable `AWS_ACCOUNT_ID` (`gh variable get AWS_ACCOUNT_ID`); reach it via IAM Identity Center (SSO) profile `lab-sso` (permission set `LabAdmin`) — no static access keys
+- AWS CLI v2, signed in: `aws sso login --sso-session lab`, with `AWS_PROFILE=lab-sso` set (Terraform reads the same profile). Full setup: [operator guide §0b](../docs/operator-guide.md#0b-sign-in-to-aws-via-sso-every-session)
 - Terraform ≥ 1.6 installed locally
-- An existing EC2 key pair in `us-east-1` (create one in the AWS console first)
+- EC2 key pair `lab-key` in `us-east-1` **in that account** (key pairs are per-account — see [operator guide §0c](../docs/operator-guide.md#0c-account-scoped-resources-one-time-per-account))
 
 ### 2. Configure
 
@@ -39,6 +39,7 @@ cp example.tfvars terraform.tfvars
 ### 3. Deploy
 
 ```bash
+aws sts get-caller-identity --query Account --output text   # must equal: gh variable get AWS_ACCOUNT_ID
 terraform init
 terraform plan       # review what's about to be created
 terraform apply
