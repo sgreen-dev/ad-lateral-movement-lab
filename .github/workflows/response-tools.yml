@@ -1,0 +1,50 @@
+name: Response tools — test IOC parser
+
+# Detection-as-code gate for the Phase 5 response tooling. Runs the IOC parser's
+# unit tests and a smoke run over the committed exemplar event set. Stdlib-only —
+# the tests fall back to a built-in runner if pytest is absent.
+
+on:
+  push:
+    paths:
+      - 'scripts/parsers/**'
+      - 'attack-emulation/sample-events*.json'
+      - '.github/workflows/response-tools.yml'
+  pull_request:
+    paths:
+      - 'scripts/parsers/**'
+      - 'attack-emulation/sample-events*.json'
+      - '.github/workflows/response-tools.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: IOC parser tests + smoke run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: python -m pip install --upgrade pip pytest
+
+      - name: Unit tests
+        run: python -m pytest scripts/parsers/ -q
+
+      - name: Smoke run — Markdown IOC table over the exemplar
+        run: python scripts/parsers/sysmon_ioc_extractor.py attack-emulation/sample-events.winrm-to-powershell.json
+
+      - name: Smoke run — STIX bundle is valid JSON
+        run: |
+          python scripts/parsers/sysmon_ioc_extractor.py attack-emulation/sample-events.winrm-to-powershell.json --format stix > /tmp/iocs.json
+          python - <<'PY'
+          import json
+          b = json.load(open('/tmp/iocs.json'))
+          assert b['type'] == 'bundle' and b['objects'], 'expected a non-empty STIX bundle'
+          print(len(b['objects']), 'indicators')
+          PY

