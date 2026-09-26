@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
   issues: write
-  id-token: write   # for OIDC if you wire it up
+  id-token: write   # OIDC: assume ad-lab-github-actions-role (no static keys)
 
 jobs:
   check:

@@ -12,10 +12,10 @@ description: |
   category rather than as two variants. The Sigma sysmon pipeline maps this to
   Sysmon EID 1, and the generic-windows pipeline maps it to Security 4688 — a
   single rule covers both telemetry sources without duplication. ParentImage is
-  the correct field for both (validated against
+  the correct field for both (see the illustrative sample in
   test_data/sample_sysmon_eid1_powershell.json).
 
-  This is the rule the incident report walks through end-to-end in Phase 5.
+  This is the rule the incident report (docs/incident-report.md) walks through end-to-end.
 references:
   - https://attack.mitre.org/techniques/T1021/006/
   - https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/T1021.006/T1021.006.md

@@ -1,6 +1,6 @@
 # Architecture
 
-> **Status:** skeleton — populated in Phase 1 alongside Terraform.
+> **Status:** reflects the Terraform in [`terraform/`](../terraform/) as built in Phase 1. Architecture PNG pending (Phase 6).
 
 ## Design goals
 
@@ -17,17 +17,17 @@
 | VPC CIDR | 10.0.0.0/16 |
 | Public subnet | 10.0.1.0/24 (Kali) |
 | Private subnet | 10.0.2.0/24 (DC, member, Wazuh) |
-| NAT egress | NAT Gateway (or NAT instance for cost — TBD in Phase 1) |
+| NAT egress | [fck-nat](https://fck-nat.dev/) NAT instance (`t4g.nano`, ARM64) in the public subnet — chosen over a NAT Gateway for cost |
 | Admin access | SSM Session Manager + SSM port forwarding |
 
 ## Hosts
 
 | Host | Role | Subnet | Instance type | OS |
 |---|---|---|---|---|
-| DC01 | Domain controller | private | t3.medium | Win Server 2022 |
-| WIN01 | Member server (target) | private | t3.medium | Win Server 2022 |
-| WAZUH | All-in-one SIEM | private | t3.large | Ubuntu 22.04 |
-| KALI | Attacker | public | t3.medium | Ubuntu 22.04 + Kali metapackages |
+| DC01 | Domain controller (`10.0.2.10`, static) | private | t3.medium | Win Server 2022 |
+| WIN01 | Member server (target; Atomic Red Team installed here, `10.0.2.20`, static) | private | t3.medium | Win Server 2022 |
+| WAZUH | All-in-one SIEM (`10.0.2.30`, static) | private | t3.large | Ubuntu 22.04 |
+| KALI | Attacker (IP assigned by DHCP — `terraform output -raw kali_private_ip`) | public | t3.medium | Ubuntu 24.04; tools via apt (nmap, xfreerdp, hydra) + pipx (NetExec, Impacket) + gem (evil-winrm) |
 
 ## Logging pipeline
 
@@ -62,7 +62,7 @@ ASCII version: see [README.md](../README.md). PNG version: `screenshots/00-archi
 
 ## Threat model for the *lab itself*
 
-- **Public Kali host** — SG limits SSH/RDP to operator's `/32` only. Kali is the only public-facing host.
+- **Public Kali host** — SG allows only SSH (22/tcp) from the operator's `/32`. Kali is the only public-facing host.
 - **No public RDP to Windows hosts.** Ever. Lateral-movement attacks originate from Kali → private subnet over the VPC's internal routing.
 - **AWS account isolation** — run this in a dedicated sandbox AWS account, never a shared/work account.
-- **Credentials** — domain credentials are lab-only and seeded via Terraform `random_password` resources, output to `terraform output -json` and rotated on every apply.
+- **Credentials** — domain credentials are lab-only and seeded via Terraform `random_password` resources, output to `terraform output -json`. They are generated once per create and persist in state across applies; they change only when the resources are destroyed/re-created (or `terraform apply -replace` is used).

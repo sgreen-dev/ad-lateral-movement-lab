@@ -1,6 +1,6 @@
 # Detections
 
-Sigma rules + per-SIEM translations + test fixtures.
+Sigma rules + per-SIEM translations + native Wazuh rule pack with validated fixtures.
 
 ## Layout
 
@@ -10,7 +10,7 @@ Sigma rules + per-SIEM translations + test fixtures.
 | [`splunk/`](splunk/) | SPL translations (one .conf per rule) |
 | [`kql/`](kql/) | KQL translations for Sentinel/Defender |
 | [`wazuh/`](wazuh/) | **Native Wazuh rules** (the port that runs in the lab's SIEM) + fixtures + offline validator |
-| [`test_data/`](test_data/) | Sample events used to validate rules |
+| [`test_data/`](test_data/) | Illustrative sample events for reading the rules (not consumed by CI; the validated fixtures are in [`wazuh/evidence/`](wazuh/evidence/)) |
 
 ## Authoring conventions
 
@@ -38,9 +38,11 @@ sigma convert -t splunk -p sysmon detections/sigma/T1021.001_*.yml   # -> SPL
 sigma convert -t kusto              detections/sigma/T1021.001_*.yml   # -> KQL
 ```
 
-CI lints the Sigma rules and runs `generate_translations.py --check` on every
-commit — the build fails if any rule stops converting or if a committed
-translation drifts from its Sigma source.
+CI (`sigma-lint.yml`) lints the Sigma rules and runs `generate_translations.py --check`
+and `generate_attack_layer.py --check` on every push/PR that touches the Sigma
+rules, the generated SPL/KQL, the Navigator layer, or the generator scripts — the
+build fails if any rule stops converting or if a committed translation or layer
+drifts from its Sigma source.
 
 ## Status
 

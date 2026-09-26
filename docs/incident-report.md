@@ -137,7 +137,7 @@ behaviour is proven in CI ([`detections/wazuh/test_wazuh_rules.py`](../detection
 | Containment (short-term) | Disable `svc_backup` in AD (`Disable-ADAccount -Identity svc_backup`) | SOC / IAM | Prevent re-use of the compromised account |
 | Containment (long-term) | Reset credentials for every account that authenticated to WIN01 in the last 24 h | IAM | Address potential session/credential theft |
 | Eradication | Re-image WIN01 from known-good Terraform state | IR / Cloud | Faster than forensic clean for an ephemeral lab host; trade-off documented |
-| Recovery | Re-deploy WIN01 (`terraform apply -target=module.windows`) and re-enroll the Wazuh agent | IR / Cloud | Return to a known-good, instrumented baseline |
+| Recovery | Re-deploy WIN01 (`terraform apply -replace=module.windows.aws_instance.member`) and confirm the Wazuh agent re-enrolled | IR / Cloud | Return to a known-good, instrumented baseline |
 | Recovery | Confirm no persistence remained on DC01 (scheduled tasks, services, run keys, new local admins) | IR | The suspected initial foothold — verify before closing |
 
 > **Live-response note:** capture volatile state *before* isolating — running processes
@@ -197,4 +197,4 @@ behaviour is proven in CI ([`detections/wazuh/test_wazuh_rules.py`](../detection
 - **A. Event set (exemplar):** [`attack-emulation/sample-events.winrm-to-powershell.json`](../attack-emulation/sample-events.winrm-to-powershell.json) — regenerate the §4 table with `python scripts/parsers/sysmon_ioc_extractor.py <file>`; live captures go to `attack-emulation/raw-events.<date>.json`.
 - **B. Detections:** Sigma [`detections/sigma/`](../detections/sigma/) · native Wazuh [`detections/wazuh/`](../detections/wazuh/) (rules `100210`/`100250`/`100260`).
 - **C. Coverage & ATT&CK:** [`docs/detection-coverage-matrix.md`](detection-coverage-matrix.md) · [`docs/attack-navigator-layer.json`](attack-navigator-layer.json).
-- **D. Test plan executed:** [`attack-emulation/atomic-test-plan.md`](../attack-emulation/atomic-test-plan.md).
+- **D. Test plan this exemplar is based on:** [`attack-emulation/atomic-test-plan.md`](../attack-emulation/atomic-test-plan.md) (results fixture-validated; live capture pending).

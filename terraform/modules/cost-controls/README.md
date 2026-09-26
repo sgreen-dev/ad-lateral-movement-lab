@@ -13,15 +13,17 @@ The financial seat-belt. Three independent layers; if all three fail you owe AWS
   1. `ec2:DescribeInstances` filtered by `tag:Project = var.project_tag`
   2. Calls `ec2:StopInstances` on every running instance found
   3. Publishes a summary to the same SNS topic as Budgets
-- IAM role scoped tightly: only `ec2:Describe*`, `ec2:StopInstances`, and `sns:Publish`
+- IAM role scoped tightly: only `ec2:DescribeInstances`, `ec2:StopInstances`, `sns:Publish` (this topic), and CloudWatch Logs write (`logs:CreateLogGroup`/`CreateLogStream`/`PutLogEvents`) for the function's own log group
 
 ## Layer 3 — GitHub Actions cost-runaway check
 Lives in `.github/workflows/cost-check.yml`, not in Terraform itself, but documented here. Runs daily, lists running instances by project tag, opens a GitHub issue on the repo if anything is up.
 
 ## Outputs
 - `sns_topic_arn`
-- `lambda_function_name`
 - `budget_name`
+- `lambda_function_name`
+- `lambda_log_group`
+- `test_lambda_command` (invoke the auto-stop Lambda on demand to verify it)
 
 ## Why three layers
 Budgets is reactive (alerts after spend). EventBridge stops things proactively but only at one time of day. The GHA check is your independent observer in case the Lambda role gets revoked or the EventBridge rule is disabled by mistake.

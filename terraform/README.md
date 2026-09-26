@@ -80,7 +80,7 @@ This removes all billable resources. Cost-control resources (SNS topic, Lambda, 
 
 | Scenario | Cost |
 |---|---|
-| Running 24/7 for 30 days | ~$165 |
+| Running 24/7 for 30 days | ~$165 (would trip the default $25 `monthly_budget_usd` alert within the first week) |
 | Running ~20 hours across a weekend | ~$5–8 |
 | Stopped (auto-stop fired) | ~$0.10/day for EBS + EIP |
 | Destroyed | $0 |

@@ -4,10 +4,20 @@ on:
   push:
     paths:
       - 'detections/sigma/**'
+      - 'detections/splunk/**'
+      - 'detections/kql/**'
+      - 'docs/attack-navigator-layer.json'
+      - 'scripts/generate_translations.py'
+      - 'scripts/generate_attack_layer.py'
       - '.github/workflows/sigma-lint.yml'
   pull_request:
     paths:
       - 'detections/sigma/**'
+      - 'detections/splunk/**'
+      - 'detections/kql/**'
+      - 'docs/attack-navigator-layer.json'
+      - 'scripts/generate_translations.py'
+      - 'scripts/generate_attack_layer.py'
       - '.github/workflows/sigma-lint.yml'
   workflow_dispatch:
 
@@ -65,7 +75,7 @@ jobs:
               if missing:
                   print(f"[err] {p}: missing keys {missing}")
                   rc = 1
-              # Warn (not fail) on placeholder UUIDs while in scaffold phase
+              # Warn (not fail) if a placeholder UUID ever slips back in
               try:
                   u = uuid.UUID(str(doc.get("id", "")))
                   if str(u).startswith("00000000-"):

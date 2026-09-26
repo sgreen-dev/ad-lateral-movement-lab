@@ -10,7 +10,7 @@ references:
     - https://attack.mitre.org/techniques/T1021/002/
     - https://attack.mitre.org/techniques/T1550/002/
 author: Shurron Green
-date: 2026/05/16
+date: 2026-05-16
 tags:
     - attack.lateral_movement
     - attack.t1021.002

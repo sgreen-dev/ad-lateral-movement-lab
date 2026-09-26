@@ -1,5 +1,5 @@
 {
-  "_comment": "Sample Windows Security Event 4624 with LogonType=10 (RDP) captured in the lab: attacker RDPs from the Kali host (10.0.1.10) into WIN01 as domain user 'bob'. Used by CI to validate the T1021.001 Sigma rule (should MATCH).",
+  "_comment": "Sample Windows Security Event 4624 with LogonType=10 (RDP) (illustrative, hand-written; not a live capture): attacker RDPs from the Kali host (10.0.1.10 in this example; Kali's real IP is DHCP-assigned) into WIN01 as domain user 'bob'. Should MATCH the T1021.001 Sigma rule. Reference only: not consumed by CI; the CI-validated fixtures are in detections/wazuh/evidence/.",
   "EventID": 4624,
   "LogonType": 10,
   "AuthenticationPackageName": "Negotiate",

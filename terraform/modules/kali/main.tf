@@ -1,18 +1,17 @@
 # =============================================================================
 # Module: Kali
 # =============================================================================
-# Attacker host. Public-subnet, SSH-restricted to operator's IP. Ubuntu 22.04
-# base with Kali rolling repo overlay — gets you the Kali toolset without
-# the Marketplace subscribe friction of the official Kali AMI.
+# Attacker host. Public-subnet, SSH-restricted to operator's IP. Plain Ubuntu
+# 24.04 base (no Kali repo overlay — it drifts too fast to pin on Ubuntu) and
+# no Marketplace subscribe friction. See bootstrap/install-kali-tools.sh.
 #
 # Tools installed for lateral movement:
-#   - nmap                — recon
-#   - crackmapexec        — Windows enumeration + auth testing
-#   - impacket-scripts    — psexec.py, wmiexec.py, secretsdump.py, etc.
-#   - evil-winrm          — interactive WinRM with logon emulation
-#   - freerdp2-x11        — xfreerdp for T1021.001 RDP attacks
-#   - hydra               — credential testing
-#   - responder           — LLMNR/NBT-NS poisoning if we go that direction later
+#   - nmap                — recon (apt)
+#   - netexec (nxc)       — Windows enumeration + auth testing; CrackMapExec successor (pipx)
+#   - impacket            — psexec.py, wmiexec.py, secretsdump.py, etc. (pipx)
+#   - evil-winrm          — interactive WinRM with logon emulation (gem)
+#   - freerdp2-x11        — xfreerdp for T1021.001 RDP attacks (apt)
+#   - hydra               — credential testing (apt)
 # =============================================================================
 
 

@@ -3,7 +3,7 @@
 A reproducible, Terraform-deployed Active Directory environment in AWS for emulating, detecting, and investigating lateral movement attacks. Logs are shipped to Wazuh, detections are authored as Sigma and translated to SPL/KQL, and findings are documented in a NIST 800-61-aligned incident report.
 
 > **Resume bullet this lab proves:**
-> *Investigated simulated lateral movement in an Active Directory environment by correlating Windows Security Events (4624 Type 3/10, 4648, 4672, 4688) and Sysmon process/network telemetry in a Wazuh SIEM; authored Sigma detection rules mapped to MITRE T1021.001/.002/.006, built triage dashboards, and documented findings in a NIST 800-61-aligned incident report. Implemented a detection-as-code CI pipeline using GitHub Actions to lint and test rules on every change.*
+> *Investigated simulated lateral movement in an Active Directory environment by correlating Windows Security Events (4624 Type 3/10, 5145), Sysmon process-creation telemetry, and PowerShell Script Block Logging (4104) in a Wazuh SIEM; authored Sigma detection rules mapped to MITRE T1021.001/.002/.006 and T1059.001, ported them to native Wazuh rules with a WinRM → PowerShell correlation, and documented findings in a NIST 800-61-aligned incident report. Implemented a detection-as-code CI pipeline using GitHub Actions to lint and test rules on every change.*
 
 ---
 
@@ -13,11 +13,11 @@ A reproducible, Terraform-deployed Active Directory environment in AWS for emula
 |---|---|
 | [`docs/`](docs/) | **[Operator guide](docs/operator-guide.md)** (run it yourself), incident report, architecture deep-dive, detection coverage matrix, analyst runbook |
 | [`terraform/`](terraform/) | IaC for the full lab — VPC, AD hosts, Wazuh SIEM, Kali attacker, cost controls |
-| [`detections/`](detections/) | Sigma rules + SPL/KQL translations + test fixtures |
-| [`scripts/`](scripts/) | Windows bootstrap (Sysmon, audit policy, ART) + Python IOC parser |
+| [`detections/`](detections/) | Sigma rules (source of truth) + generated SPL/KQL + native Wazuh rule pack (`wazuh/`, rules `100210`–`100260`) with positive/negative test fixtures |
+| [`scripts/`](scripts/) | SPL/KQL + ATT&CK Navigator generators (`generate_translations.py`, `generate_attack_layer.py`) + Python IOC parser (`parsers/`). Windows host bootstrap lives in [`terraform/modules/windows/bootstrap/`](terraform/modules/windows/bootstrap/) |
 | [`attack-emulation/`](attack-emulation/) | Atomic Red Team test plan with timestamps |
-| [`.github/workflows/`](.github/workflows/) | Detection-as-code CI: Sigma lint, rule tests, cost-runaway check |
-| [`walkthrough/`](walkthrough/) | Video walkthrough script + recording link |
+| [`.github/workflows/`](.github/workflows/) | CI: Sigma lint + translation drift (`sigma-lint`), Wazuh rule fixture tests (`wazuh-rules`), IOC parser tests (`response-tools`), Terraform fmt/validate (`terraform`), daily cost-runaway check (`cost-check`) |
+| [`walkthrough/`](walkthrough/) | Video walkthrough script (skeleton; script + recording link pending — Phase 6) |
 
 ---
 
@@ -27,22 +27,25 @@ A reproducible, Terraform-deployed Active Directory environment in AWS for emula
                          AWS VPC 10.0.0.0/16  (us-east-1)
    ┌─────────────────────────────────────────────────────────────────┐
    │  Public Subnet 10.0.1.0/24                                      │
-   │  ┌──────────────────────┐                                       │
-   │  │  Kali (Attacker)     │   t3.medium                           │
-   │  │  10.0.1.10           │   Atomic Red Team                     │
-   │  └──────────┬───────────┘                                       │
-   │             │ RDP / SMB / WinRM                                 │
+   │  ┌──────────────────────┐    ┌──────────────────────┐           │
+   │  │  Kali (Attacker)     │    │  fck-nat instance    │ t4g.nano  │
+   │  │  Ubuntu 24.04, DHCP  │    │  (private egress)    │           │
+   │  └──────────┬───────────┘    └──────────────────────┘           │
+   │             │ RDP / SMB / WinRM   t3.medium                     │
    │             ▼                                                   │
    │  Private Subnet 10.0.2.0/24                                     │
    │  ┌──────────────────────┐    ┌──────────────────────┐           │
    │  │  DC01 (Domain Ctrl)  │    │  WIN01 (Member)      │           │
-   │  │  Win Server 2022     │◄──►│  Win Server 2022     │           │
+   │  │  10.0.2.10           │◄──►│  10.0.2.20           │           │
+   │  │  Win Server 2022     │    │  Win Server 2022     │           │
    │  │  Sysmon + Wazuh agt  │    │  Sysmon + Wazuh agt  │           │
+   │  │                      │    │  + Atomic Red Team   │           │
    │  └──────────┬───────────┘    └──────────┬───────────┘           │
    │             └───────────┬───────────────┘                       │
    │                         ▼                                       │
    │  ┌──────────────────────────────────────┐                       │
    │  │  Wazuh All-in-One (Manager+Indexer)  │  t3.large             │
+   │  │  10.0.2.30                           │                       │
    │  └──────────────────────────────────────┘                       │
    └─────────────────────────────────────────────────────────────────┘
 ```
@@ -53,7 +56,7 @@ Full architecture details: [`docs/architecture.md`](docs/architecture.md).
 
 ## Detection coverage
 
-Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); CI fails if they drift. **Tested** = true positive observed in Wazuh during the Phase 3 Atomic Red Team run.
+Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([`detections/splunk/`](detections/splunk/)) and **KQL** ([`detections/kql/`](detections/kql/)) are generated from the Sigma source by [`scripts/generate_translations.py`](scripts/generate_translations.py); the `sigma-lint` CI job fails if a committed translation drifts from its Sigma source. **Tested** = fixture-validated: the native Wazuh rule ([`detections/wazuh/local_rules.xml`](detections/wazuh/local_rules.xml)) fires on its positive fixture and stays silent on its negative fixture in CI ([`test_wazuh_rules.py`](detections/wazuh/test_wazuh_rules.py), [`evidence/`](detections/wazuh/evidence/)). Live capture in a running lab is still pending.
 
 | ATT&CK ID | Technique | Sigma rule | SPL | KQL | Tested |
 |---|---|---|---|---|---|
@@ -66,7 +69,7 @@ Legend: ✅ done · ⏳ pending · n/a not supported by that backend. **SPL** ([
 
 ¹ The Kusto/KQL backend does not support Sigma correlation rules, so no KQL is generated for the correlation rule; its two base rules each still have standalone KQL.
 
-All five base rules plus the correlation rule are finalized (real UUIDs, `status: test`, validated false-positive profiles), convert cleanly to SPL, and were each confirmed firing as true positives during the Phase 3 Atomic Red Team run. The ATT&CK Navigator coverage layer is generated from rule tags into [`docs/attack-navigator-layer.json`](docs/attack-navigator-layer.json).
+All five base rules plus the correlation rule are finalized (real UUIDs, documented false-positive profiles) and convert cleanly to SPL. Five are `status: test`; the NTLM network-logon rule is still `status: experimental`. Each has a native Wazuh counterpart (`100210`–`100260`) validated against positive/negative fixtures in CI. None has yet been observed firing in a live lab run; the incident report and test-plan results are clearly-labeled exemplars. The ATT&CK Navigator coverage layer is generated from rule tags into [`docs/attack-navigator-layer.json`](docs/attack-navigator-layer.json).
 
 ---
 
@@ -95,7 +98,8 @@ ssh -i lab-key.pem ubuntu@$(terraform output -raw kali_public_ip)
 
 # 4. Investigate the alerts in Wazuh
 echo "https://$(terraform output -raw wazuh_private_ip):443"
-# Tunnel via SSM port forwarding (see docs/architecture.md)
+# Tunnel via SSM port forwarding: terraform output -raw wazuh_dashboard_command
+# (full steps: docs/operator-guide.md §4)
 
 # 5. Tear down (do this every session — see cost section)
 terraform destroy
@@ -124,7 +128,7 @@ This lab costs **~$165/month** if left running 24/7 and **~$5–8 per active wee
 | 3 — Attack | ✅ Complete |
 | 4 — Detect | ✅ Complete |
 | 5 — Respond | ✅ Complete — [IOC parser](scripts/parsers/sysmon_ioc_extractor.py) (Sysmon → Markdown/STIX) + [NIST 800-61 incident report](docs/incident-report.md) (lab exemplar) |
-| 6 — Document | 🚧 In progress — architecture, coverage matrix, and runbook drafted |
+| 6 — Document | 🚧 In progress — operator guide, architecture, coverage matrix, and analyst runbook written; architecture PNG and video walkthrough pending |
 
 ---
 
@@ -134,4 +138,4 @@ Built as a portfolio project demonstrating Tier 2 SOC analyst and detection engi
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Detection rules forked from [SigmaHQ](https://github.com/SigmaHQ/sigma) retain their original DRL 1.1 license; see headers.
+MIT — see [LICENSE](LICENSE). Detection rules are authored for this lab (none are forked); where a rule's patterns follow established [SigmaHQ](https://github.com/SigmaHQ/sigma) rules, its `references:` block cites them.

@@ -5,8 +5,8 @@ generate_translations.py
 Regenerates the SPL (detections/splunk/*.conf) and KQL (detections/kql/*.kql)
 translations from the authoritative Sigma rules in detections/sigma/*.yml.
 
-Sigma is the source of truth; these outputs are derived. CI runs this and then
-`git diff --exit-code` to guarantee the committed translations match the rules.
+Sigma is the source of truth; these outputs are derived. CI (sigma-lint.yml) runs
+this with --check to guarantee the committed translations match the rules.
 
 Correlation rules (those with a top-level `correlation:` block) are converted
 with their referenced base rules in scope, and only to SPL: the Kusto backend
