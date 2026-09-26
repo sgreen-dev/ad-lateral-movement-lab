@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Owner** | Shurron Green |
-| **Last reviewed** | 2026-08-20 |
-| **Version** | 1.0 |
+| **Last reviewed** | 2026-09-26 |
+| **Version** | 1.1 — AWS auth moved to IAM Identity Center (SSO) profile `lab-sso` |
 | **Review cadence** | Re-verify after any change to `terraform/` or the bootstrap scripts |
 | **Escalation** | Solo lab — you are the operator and the owner. Cost anomalies → AWS Budgets alert ($25) + SNS email; runaway instances → §8 teardown. |
 
@@ -53,17 +53,92 @@ Domain accounts (passwords via `terraform output -raw <name>`):
 
 ---
 
-## 0. One-time prerequisites (your laptop)
+## 0. Prerequisites (your laptop)
+
+### 0a. Tooling (one-time)
 
 ```powershell
-aws sts get-caller-identity          # correct AWS account? (use a dedicated sandbox account)
 terraform version                    # >= 1.6
-aws --version                        # AWS CLI v2
+aws --version                        # AWS CLI v2 (SSO sessions need v2)
 session-manager-plugin --version     # required for every 'aws ssm start-session'
+gh auth status                       # GitHub CLI, signed in — used to read the lab account ID
 ```
 
 If any of the four errors out, fix that before going further — the rest of the guide assumes
 all four are on PATH.
+
+### 0b. Sign in to AWS via SSO (every session)
+
+The lab runs in a dedicated sandbox account (us-east-1). Its ID is **not** written in this repo;
+it lives in the GitHub repo variable **`AWS_ACCOUNT_ID`** (`gh variable get AWS_ACCOUNT_ID`).
+Access is **IAM Identity Center (SSO)** through the CLI profile **`lab-sso`** — permission set
+**`LabAdmin`**, SSO session `lab`. There are no long-lived access keys; don't create any.
+
+Expected `~/.aws/config` shape (one-time setup; `aws configure sso --profile lab-sso` writes it).
+The start URL is in the IAM Identity Center console → **Settings → AWS access portal URL**;
+the account ID is the repo variable above.
+
+```ini
+[default]
+region = us-east-1
+output = json
+
+[sso-session lab]
+sso_start_url = https://d-xxxxxxxxxx.awsapps.com/start    # your access portal URL
+sso_region = us-east-1
+sso_registration_scopes = sso:account:access
+
+[profile lab-sso]
+sso_session = lab
+sso_account_id = 123456789012                            # = gh variable get AWS_ACCOUNT_ID
+sso_role_name = LabAdmin
+region = us-east-1
+```
+
+`[default]` deliberately carries **no credentials**: a command that forgets the profile fails
+with `Unable to locate credentials` instead of silently acting as some other identity.
+
+Each session:
+
+```powershell
+$env:AWS_PROFILE = 'lab-sso'         # every aws/terraform command below inherits this
+aws sso login --sso-session lab      # opens the browser; approve the device code
+$LAB_ACCOUNT = (gh variable get AWS_ACCOUNT_ID).Trim()     # lab account ID, held in the repo variable
+$me = aws sts get-caller-identity --query Account --output text
+if ($me -ne $LAB_ACCOUNT) { throw "Signed in to $me, expected $LAB_ACCOUNT - fix AWS_PROFILE / aws sso login before running terraform" } else { "OK: lab account" }
+# bash: export AWS_PROFILE=lab-sso; LAB_ACCOUNT=$(gh variable get AWS_ACCOUNT_ID)
+#       [ "$(aws sts get-caller-identity --query Account --output text)" = "$LAB_ACCOUNT" ] && echo OK || echo WRONG ACCOUNT
+```
+
+**Acceptance:** prints `OK: lab account`, and
+`aws sts get-caller-identity --query Arn --output text` shows an
+`assumed-role/AWSReservedSSO_LabAdmin_…` ARN. A `Signed in to … expected …` error → wrong
+profile is active; **stop** — Terraform would build the lab in that account.
+`Token has expired and refresh failed` → re-run `aws sso login --sso-session lab`.
+
+> **SSO tokens expire** (Identity Center session length, default 8 h). Terraform and the AWS
+> CLI pick up `AWS_PROFILE` and refresh role credentials automatically while the SSO token is
+> valid, but an expired token fails mid-command. **Re-run `aws sso login` before §8 teardown**
+> so a `terraform destroy` doesn't die halfway and leave instances billing.
+>
+> To persist the profile across terminals instead of setting it per session:
+> `[Environment]::SetEnvironmentVariable('AWS_PROFILE','lab-sso','User')`.
+
+### 0c. Account-scoped resources (one-time per account)
+
+EC2 key pairs are per-account, per-region. Confirm `lab-key` exists in the lab account:
+
+```powershell
+aws ec2 describe-key-pairs --key-names lab-key --query 'KeyPairs[].KeyName' --output text   # expect: lab-key
+```
+
+`InvalidKeyPair.NotFound` → create it and save the private key to the repo root (gitignored):
+
+```powershell
+aws ec2 create-key-pair --key-name lab-key --query KeyMaterial --output text | Out-File -Encoding ascii lab-key.pem
+```
+
+### 0d. Terraform inputs
 
 `terraform/terraform.tfvars` is already filled (`my_ip`, `key_pair_name = lab-key`,
 `alert_email`). If your public IP changed since last session, refresh it — the Kali security
@@ -478,6 +553,10 @@ claim (today it means fixture-validated in CI); record it in the test plan's `Re
 ## 8. Tear down (every session — this is the cost discipline)
 
 ```powershell
+# Confirm you're still signed in to the lab account (token expired? aws sso login --sso-session lab)
+$LAB_ACCOUNT = (gh variable get AWS_ACCOUNT_ID).Trim()     # lab account ID, held in the repo variable
+$me = aws sts get-caller-identity --query Account --output text
+if ($me -ne $LAB_ACCOUNT) { throw "Signed in to $me, expected $LAB_ACCOUNT - fix AWS_PROFILE / aws sso login before running terraform" } else { "OK: lab account" }
 cd terraform
 terraform destroy
 ```
@@ -500,6 +579,7 @@ aws ec2 describe-instances --filters "Name=tag:Project,Values=ad-lateral-movemen
 ## The whole loop, condensed
 
 ```
+aws sso login + caller check         # §0b profile lab-sso, account = repo var AWS_ACCOUNT_ID
 terraform apply + 1b                 # §1  stand up, capture $WIN01_ID/$DC01_ID/$WAZUH_ID/$KALI_IP
 check status (2a–2d)                 # §2  4 running · services active · agents Active · smoke test passes
 pick atomic + $t0                    # §5  Invoke-AtomicTest <Txxxx> -ShowDetails
@@ -517,6 +597,8 @@ terraform destroy                    # §8  every session
 
 | Symptom | Check |
 |---|---|
+| `Token has expired and refresh failed` / `Error loading SSO Token` | SSO session lapsed → `aws sso login --sso-session lab` (§0b). Terraform shows the same as `failed to refresh cached credentials`. |
+| §0b check throws `Signed in to …, expected …` | `AWS_PROFILE` isn't `lab-sso` in this terminal → `$env:AWS_PROFILE = 'lab-sso'` and re-check before any `terraform` command. |
 | SSH to Kali times out | Public IP changed → refresh `my_ip` (§0) and `terraform apply` (updates the SG). |
 | `start-session` fails | SSM needs the instance's IAM profile + the plugin on your laptop; instance must be `running` and SSM-healthy (`aws ssm describe-instance-information`). |
 | `$WIN01_ID` etc. empty | You're not in `terraform/`, or apply hasn't completed. Re-run 1b from the `terraform/` dir. |

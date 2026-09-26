@@ -44,6 +44,6 @@ This is the meat. Walk through:
 ## Recording checklist
 - [ ] Hide bookmarks bar and personal tabs
 - [ ] Increase terminal font to 16+
-- [ ] Use a fresh AWS profile name (no account IDs visible)
+- [ ] Sign in (`aws sso login --sso-session lab`) *before* recording — the SSO browser page shows the start URL; keep `get-caller-identity` output and account IDs off screen
 - [ ] Practice once before recording
 - [ ] Don't apologize for anything in the video — edit instead
