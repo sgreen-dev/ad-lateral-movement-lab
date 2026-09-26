@@ -59,6 +59,7 @@ Thumbs.db
 # --- Lab outputs that shouldn't be committed ---
 captures/
 raw-logs/
+attack-emulation/raw-events.*.json
 local-notes.md
 scratch/
 

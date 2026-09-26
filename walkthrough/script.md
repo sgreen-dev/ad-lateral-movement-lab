@@ -9,7 +9,7 @@
 ## Beats (with target durations)
 
 ### 0:00–0:30 — Hook
-> "I'm [name]. This is a fully reproducible Active Directory lab in AWS where I emulate three lateral movement techniques, detect them with Sigma rules, and document the investigation as a SOC analyst would. Everything you see is in the repo linked below."
+> "I'm [name]. This is a fully reproducible Active Directory lab in AWS where I emulate three lateral movement techniques — RDP, SMB admin shares, and WinRM — plus the PowerShell payload that follows, detect them with Sigma rules and a WinRM-to-PowerShell correlation rule, and document the investigation as a SOC analyst would. Everything you see is in the repo linked below."
 
 ### 0:30–1:30 — Architecture (1 min)
 - Show README architecture diagram
@@ -17,9 +17,9 @@
 - One sentence on cost discipline ("auto-stop nightly, budgets at $25, terraform destroy after every session")
 
 ### 1:30–3:00 — Live attack (1.5 min)
-- Show terminal: SSH to Kali
-- Run T1021.006 WinRM atomic
-- Cut to Wazuh dashboard: alert fires
+- Show terminal: SSM session on DC01
+- Run the T1021.006 WinRM atomic (`Invoke-Command` to WIN01 as `svc_backup`), then the encoded T1059.001 payload over the same session
+- Cut to Wazuh dashboard: `100210` (WinRM) → `100250` (PowerShell) → `100260` (correlation) fire
 - Highlight the rule name and the matching event
 
 ### 3:00–5:00 — Investigation (2 min)

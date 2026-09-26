@@ -29,7 +29,8 @@ logsource:
   category: ps_script
 detection:
   encoded_command:
-    # Case-insensitive in Sigma: '-enc' also covers '-EncodedCommand'.
+    # Case-insensitive in Sigma. '-enc ' carries a trailing space, so it does NOT
+    # match '-EncodedCommand'; that form is listed separately.
     # Bare '-e' is intentionally omitted as too false-positive prone.
     ScriptBlockText|contains:
       - 'FromBase64String'

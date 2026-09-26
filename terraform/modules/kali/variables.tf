@@ -40,13 +40,13 @@ variable "root_volume_size_gb" {
 }
 
 variable "ami_owner" {
-  description = "AMI owner for Ubuntu 22.04 lookup. 099720109477 = Canonical."
+  description = "AMI owner for Ubuntu 24.04 lookup. 099720109477 = Canonical."
   type        = string
   default     = "099720109477"
 }
 
 variable "ami_name_pattern" {
-  description = "AMI name pattern for Ubuntu 22.04 LTS amd64 server."
+  description = "AMI name pattern for Ubuntu 24.04 LTS amd64 server."
   type        = string
   default     = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
 }

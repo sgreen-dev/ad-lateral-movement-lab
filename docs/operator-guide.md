@@ -33,10 +33,10 @@ repo root.
 
 | Host | Name tag | Role | IP | Reach it via |
 |---|---|---|---|---|
-| **Kali** | `ad-lateral-movement-lab-kali` | Attacker | `10.0.1.10` (public EIP) | `ssh -i lab-key.pem ubuntu@$KALI_IP` |
+| **Kali** | `ad-lateral-movement-lab-kali` | Attacker | DHCP in `10.0.1.0/24` (e.g. `10.0.1.10`; `terraform output -raw kali_private_ip`) + public EIP | `ssh -i lab-key.pem ubuntu@$KALI_IP` |
 | **DC01** | `ad-lateral-movement-lab-dc01` | Domain controller (`lab.local`) | `10.0.2.10` | SSM session / RDP tunnel `localhost:13389` |
 | **WIN01** | `ad-lateral-movement-lab-win01` | Member server + **Atomic Red Team host** | `10.0.2.20` | SSM session / RDP tunnel `localhost:23389` |
-| **WAZUH** | `ad-lateral-movement-lab-wazuh` | SIEM (manager+indexer+dashboard) | private | SSM session / dashboard tunnel `https://localhost:8443` |
+| **WAZUH** | `ad-lateral-movement-lab-wazuh` | SIEM (manager+indexer+dashboard) | `10.0.2.30` | SSM session / dashboard tunnel `https://localhost:8443` |
 
 Domain accounts (passwords via `terraform output -raw <name>`):
 
@@ -131,10 +131,10 @@ aws ec2 describe-instances --filters "Name=tag:Project,Values=ad-lateral-movemen
 ------------------------------------------------------------------------------
 |                             DescribeInstances                              |
 +---------------------------------+-----------------------+---------+---------+
-|  ad-lateral-movement-lab-kali   |  i-0a1b...            | running | 10.0.1.10 |
+|  ad-lateral-movement-lab-kali   |  i-0a1b...            | running | 10.0.1.x  |
 |  ad-lateral-movement-lab-dc01   |  i-0c3d...            | running | 10.0.2.10 |
 |  ad-lateral-movement-lab-win01  |  i-0e5f...            | running | 10.0.2.20 |
-|  ad-lateral-movement-lab-wazuh  |  i-0g7h...            | running | 10.0.x.x  |
+|  ad-lateral-movement-lab-wazuh  |  i-0g7h...            | running | 10.0.2.30 |
 +---------------------------------+-----------------------+---------+---------+
 ```
 
@@ -160,7 +160,9 @@ aws ssm start-session --target $WIN01_ID
 Then, on WIN01:
 
 ```powershell
-# Bootstrap step markers — expect 6 .done files (defender, sysmon, auditpol, pslogging, wazuh, art)
+# Bootstrap step markers — WIN01 expects 8 .done files: 10-defender-exclusion, 10-sysmon, 10-auditpol,
+# 10-pslogging, 10-wazuh, 30-joined, 30-postjoin, 40-art.
+# (DC01 expects 7: the five 10-* markers + 20-promote-initiated, 20-promote-complete.)
 Get-ChildItem C:\bootstrap-state
 Get-Content C:\bootstrap-common.log -Tail 40    # tail transcripts if any marker is missing
 Get-Content C:\bootstrap-art.log    -Tail 20
@@ -306,7 +308,7 @@ vary by event type. The ones you'll query most:
 | A specific event ID | `data.win.system.eventID: "1"` (Sysmon proc create) · `"4624"` · `"4688"` · `"4104"` |
 | Sysmon by parent process | `data.win.eventdata.parentImage: *wsmprovhost.exe` |
 | Sysmon by image / cmdline | `data.win.eventdata.image: *powershell.exe` · `data.win.eventdata.commandLine: *-enc*` |
-| Network logon source IP | `data.win.eventdata.ipAddress: "10.0.1.10"` (Kali = attacker source) |
+| Network logon source IP | `data.win.eventdata.ipAddress: "<Kali IP>"` (Kali = attacker source; get it from `terraform output -raw kali_private_ip`) |
 | Logon type (RDP=10, network=3) | `data.win.eventdata.logonType: "10"` |
 | PowerShell script text | `data.win.system.channel: "Microsoft-Windows-PowerShell/Operational" and data.win.system.eventID: "4104"` |
 | Only things that alerted | `rule.level >= 3` · by technique: `rule.mitre.id: "T1021.006"` |
@@ -432,11 +434,11 @@ Custom rules go in `/var/ossec/etc/rules/local_rules.xml` (rule IDs **100000–1
 user range). Sysmon Event ID 1 decodes under the built-in group `sysmon_event1`:
 
 ```xml
-<group name="lateral_movement,sysmon,">
+<group name="ad_lateral_movement,">
   <rule id="100210" level="12">
     <if_group>sysmon_event1</if_group>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\wsmprovhost\.exe$</field>
-    <description>T1021.006 WinRM remote execution: child of wsmprovhost.exe</description>
+    <description>Lateral Movement (T1021.006): WinRM remote execution — process spawned by wsmprovhost.exe on $(win.system.computer)</description>
     <mitre>
       <id>T1021.006</id>
     </mitre>
@@ -461,7 +463,8 @@ sudo systemctl restart wazuh-manager
 
 Then **re-run the atomic from §5** and confirm the alert now appears — `rule.id: "100210"` (or
 `rule.mitre.id: "T1021.006"`) in `wazuh-alerts-*`. Seeing your own rule fire on a live test is
-the point — that's the true positive the README's "Tested ✅" column claims.
+the point — that's the live true positive the README's "Tested ✅" column does **not** yet
+claim (today it means fixture-validated in CI); record it in the test plan's `Result` cell.
 
 > **Revert a rule:** delete its `<rule>` block from `local_rules.xml`,
 > `sudo systemctl restart wazuh-manager`.

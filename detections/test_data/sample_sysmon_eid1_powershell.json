@@ -1,5 +1,5 @@
 {
-  "_comment": "Sample Sysmon Event ID 1 (process creation) captured in the lab: powershell.exe spawned by wsmprovhost.exe on WIN01 (WinRM remoting session). Used to validate the T1021.006 Sigma rule (ParentImage match, should FIRE). Note: T1059.001 keys on ScriptBlockText (PowerShell EID 4104), not this event's CommandLine, so it is exercised by a separate 4104 sample.",
+  "_comment": "Sample Sysmon Event ID 1 (process creation) (illustrative, hand-written; not a live capture): powershell.exe spawned by wsmprovhost.exe on WIN01 (WinRM remoting session). Should FIRE the T1021.006 Sigma rule (ParentImage match). Reference only: not consumed by CI. T1059.001 keys on ScriptBlockText (PowerShell EID 4104), not this event's CommandLine; its 4104 fixture is detections/wazuh/evidence/T1059.001_powershell_post_winrm.positive.json.",
   "EventID": 1,
   "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
   "ParentImage": "C:\\Windows\\System32\\wsmprovhost.exe",
