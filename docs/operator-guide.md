@@ -204,31 +204,37 @@ terraform output -raw bob_password           # also: alice_password, svc_backup_
 
 ## 2. Check server status (every session, before attacking)
 
-### 2a. Are the four instances running?
+### 2a. Are all five instances running?
 
 ```powershell
 aws ec2 describe-instances --filters "Name=tag:Project,Values=ad-lateral-movement-lab" "Name=instance-state-name,Values=running" --query 'Reservations[].Instances[].[Tags[?Key==`Name`]|[0].Value,InstanceId,State.Name,PrivateIpAddress]' --output table
 ```
 
-**Known-good output** — exactly **4** rows:
+**Known-good output** — exactly **5** rows: the four lab hosts plus the fck-nat instance, which
+carries the same `Project` tag. Row order varies between calls.
 
 ```
-------------------------------------------------------------------------------
-|                             DescribeInstances                              |
-+---------------------------------+-----------------------+---------+---------+
-|  ad-lateral-movement-lab-kali   |  i-0a1b...            | running | 10.0.1.x  |
-|  ad-lateral-movement-lab-dc01   |  i-0c3d...            | running | 10.0.2.10 |
-|  ad-lateral-movement-lab-win01  |  i-0e5f...            | running | 10.0.2.20 |
-|  ad-lateral-movement-lab-wazuh  |  i-0g7h...            | running | 10.0.2.30 |
-+---------------------------------+-----------------------+---------+---------+
+-----------------------------------------------------------------------------------
+|                                DescribeInstances                                |
++--------------------------------+-----------------------+----------+-------------+
+|  ad-lateral-movement-lab-kali  |  i-07dd...            |  running |  10.0.1.x   |
+|  ad-lateral-movement-lab-nat   |  i-0889...            |  running |  10.0.1.x   |
+|  ad-lateral-movement-lab-dc01  |  i-0cee...            |  running |  10.0.2.10  |
+|  ad-lateral-movement-lab-win01 |  i-0670...            |  running |  10.0.2.20  |
+|  ad-lateral-movement-lab-wazuh |  i-0d2a...            |  running |  10.0.2.30  |
++--------------------------------+-----------------------+----------+-------------+
 ```
 
-**Fewer than 4 rows?** The nightly auto-stop (03:00 UTC) likely stopped them. Start them:
+The NAT row matters: DC01, WIN01 and Wazuh reach the internet (Windows Update, Wazuh/ART
+downloads) only through it. A missing or stopped `-nat` row means bootstrap and prereq downloads
+on the private hosts will hang.
+
+**Fewer than 5 rows?** The nightly auto-stop (03:00 UTC) likely stopped them. Start them:
 
 ```powershell
 $ids = (aws ec2 describe-instances --filters "Name=tag:Project,Values=ad-lateral-movement-lab" --query 'Reservations[].Instances[].InstanceId' --output text)
 aws ec2 start-instances --instance-ids $ids.Split()
-# Then re-run 2a until all 4 read "running", and re-run 1b (instance IDs are stable across stop/start).
+# Starts the NAT too. Re-run 2a until all 5 read "running", then re-run 1b (instance IDs are stable across stop/start).
 ```
 
 If a host is entirely **absent** from `describe-instances` (not just stopped), Terraform never
@@ -591,7 +597,7 @@ aws ec2 describe-instances --filters "Name=tag:Project,Values=ad-lateral-movemen
 ```
 aws sso login + caller check         # §0b profile lab-sso, account = repo var AWS_ACCOUNT_ID
 terraform apply + 1b                 # §1  stand up, capture $WIN01_ID/$DC01_ID/$WAZUH_ID/$KALI_IP
-check status (2a–2d)                 # §2  4 running · services active · agents Active · smoke test passes
+check status (2a–2d)                 # §2  5 running · services active · agents Active · smoke test passes
 pick atomic + $t0                    # §5  Invoke-AtomicTest <Txxxx> -ShowDetails
 CheckPrereqs / GetPrereqs / run      # §5  execute (mind SYSTEM vs user context)
 wait 60s · Cleanup                   # §5  serialize + clean
