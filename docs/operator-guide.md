@@ -147,8 +147,9 @@ group only admits your `/32`:
 ```powershell
 cd terraform
 $ip = (Invoke-RestMethod "https://checkip.amazonaws.com").Trim()   # IPv4-only endpoint; ifconfig.me returns IPv6 on dual-stack ISPs
+if ($ip -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw "Not an IPv4 address: $ip - do not write it to my_ip" }
 (Get-Content terraform.tfvars) -replace '^my_ip\s*=.*', "my_ip = `"$ip/32`"" | Set-Content terraform.tfvars
-Select-String '^my_ip' terraform.tfvars     # verify it now shows your current /32
+Select-String '^my_ip' terraform.tfvars     # expect: my_ip = "a.b.c.d/32" (IPv4). A value with colons is IPv6 - the SG rule won't match; redo with the IPv4 address
 # bash: sed -i "s#^my_ip.*#my_ip = \"$(curl -s https://checkip.amazonaws.com)/32\"#" terraform.tfvars
 ```
 
