@@ -146,10 +146,11 @@ group only admits your `/32`:
 
 ```powershell
 cd terraform
-$ip = (Invoke-RestMethod "https://ifconfig.me/ip").Trim()
+$ip = (Invoke-RestMethod "https://checkip.amazonaws.com").Trim()   # IPv4-only endpoint; ifconfig.me returns IPv6 on dual-stack ISPs
+if ($ip -notmatch '^\d{1,3}(\.\d{1,3}){3}$') { throw "Not an IPv4 address: $ip - do not write it to my_ip" }
 (Get-Content terraform.tfvars) -replace '^my_ip\s*=.*', "my_ip = `"$ip/32`"" | Set-Content terraform.tfvars
-Select-String '^my_ip' terraform.tfvars     # verify it now shows your current /32
-# bash: sed -i "s#^my_ip.*#my_ip = \"$(curl -s ifconfig.me)/32\"#" terraform.tfvars
+Select-String '^my_ip' terraform.tfvars     # expect: my_ip = "a.b.c.d/32" (IPv4). A value with colons is IPv6 - the SG rule won't match; redo with the IPv4 address
+# bash: sed -i "s#^my_ip.*#my_ip = \"$(curl -s https://checkip.amazonaws.com)/32\"#" terraform.tfvars
 ```
 
 ---
@@ -167,6 +168,15 @@ Provisioning takes **~10–15 min**. Instances boot in ~2 min, then the Windows 
 bootstrap chain (promote DC → domain-join WIN01 → Sysmon → audit policy → PowerShell logging →
 Wazuh agent → install ART) and Wazuh runs its all-in-one installer. **Do not attack until §2
 reports all-green.**
+
+**First apply in an account only:** AWS emails `alert_email` an *"AWS Notification - Subscription
+Confirmation"*. Click **Confirm subscription** — until you do, the $25 budget alert and the
+nightly auto-stop summary go nowhere. Verify:
+
+```powershell
+aws sns list-subscriptions-by-topic --topic-arn (terraform output -raw sns_topic_arn) --query 'Subscriptions[].SubscriptionArn' --output text
+# expect an ARN ending in a UUID; "PendingConfirmation" = not yet clicked
+```
 
 ### 1b. Capture session handles (run once per session, from `terraform/`)
 

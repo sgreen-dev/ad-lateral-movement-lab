@@ -91,7 +91,7 @@ aws sts get-caller-identity         # Account must be the lab sandbox account
 # 1. Stand up the lab
 cd terraform
 terraform init
-terraform apply -var="my_ip=$(curl -s ifconfig.me)/32"
+terraform apply -var="my_ip=$(curl -s https://checkip.amazonaws.com)/32"   # IPv4 only
 
 # 2. Wait ~10 min for Windows hosts to bootstrap, then confirm the
 #    domain-join / agent-enrollment transcripts landed on the hosts:
